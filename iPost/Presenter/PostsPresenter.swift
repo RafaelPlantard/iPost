@@ -11,14 +11,14 @@ import Combine
 
 // MARK: - PostsPresenter
 final class PostsPresenter: ObservableObject {
-    var view: PostsPresenterOutputProtocol?
+    weak var viewState: PostsPresenterOutputProtocol?
     private let interactor: PostsInteractorInputProtocol
     private let router: PostsRouter
     
-    // View state
-    @Published private(set) var users: [User] = []
-    @Published private(set) var posts: [Post] = []
-    @Published private(set) var selectedUserId: UUID?
+    // State that's needed across views - not directly exposed to views
+    private(set) var users: [User] = []
+    private(set) var posts: [Post] = []
+    private(set) var selectedUserId: UUID?
     
     init(interactor: PostsInteractorInputProtocol, router: PostsRouter) {
         self.interactor = interactor
@@ -34,28 +34,25 @@ extension PostsPresenter: PostsPresenterInputProtocol {
     
     func createPost(text: String, imageName: String?) {
         guard let userId = selectedUserId else {
-            view?.showError(message: "Please select a user first")
+            viewState?.showError(message: "Please select a user first")
             return
         }
         
-        // First notify view that post creation started (helps with animation timing)
+        // First notify viewState that post creation started (helps with animation timing)
         DispatchQueue.main.async { [weak self] in
             guard let self = self else { return }
             // Show toast first for better UX - it will appear as the modal animates away
-            self.view?.showToast(message: "Creating post...", type: .info)
+            self.viewState?.showToast(message: "Creating post...", type: .info)
         }
         
-        // Slight delay to allow UI to update before we process
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
-            guard let self = self else { return }
-            self.interactor.createPost(text: text, imageName: imageName, forUser: userId)
-        }
+        // Call the interactor directly - viewState will handle UI updates
+        interactor.createPost(text: text, imageName: imageName, forUser: userId)
     }
     
     func selectUser(id: UUID) {
         selectedUserId = id
-        // Notify the view of the user change
-        view?.selectedUserChanged(id: id)
+        // Notify the viewState of the user change
+        viewState?.updateSelectedUser(id: id)
         // Save the selected user to persist between app launches
         interactor.saveSelectedUserId(id)
         // When a user is selected, we might want to refresh the feed
@@ -67,21 +64,16 @@ extension PostsPresenter: PostsPresenterInputProtocol {
 extension PostsPresenter: PostsInteractorOutputProtocol {
     func didSelectUser(_ userId: UUID) {
         selectedUserId = userId
-        view?.selectedUserChanged(id: userId)
+        viewState?.updateSelectedUser(id: userId)
     }
     func didFetchPosts(_ posts: [Post]) {
         self.posts = posts
-        view?.showPosts(posts)
+        viewState?.updatePosts(posts)
     }
     
     func didFetchUsers(_ users: [User]) {
         self.users = users
-        view?.showUsers(users)
-        
-        // Select first user by default
-        if let firstUser = users.first, selectedUserId == nil {
-            selectedUserId = firstUser.id
-        }
+        viewState?.updateUsers(users)
         
         // After users are fetched, we fetch posts
         interactor.fetchPosts()
@@ -91,17 +83,17 @@ extension PostsPresenter: PostsInteractorOutputProtocol {
         // Refresh posts after creating a new one
         interactor.fetchPosts()
         
-        // First notify the view to close the sheet
-        view?.postCreated()
+        // First notify the viewState to close the sheet
+        viewState?.postCreated()
         
         // Show success toast after a slight delay to ensure it appears after modal dismissal
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
             guard let self = self else { return }
-            self.view?.showToast(message: "Post created successfully!", type: .success)
+            self.viewState?.showToast(message: "Post created successfully!", type: .success)
         }
     }
     
     func onError(message: String) {
-        view?.showError(message: message)
+        viewState?.showError(message: message)
     }
 }

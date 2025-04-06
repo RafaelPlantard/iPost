@@ -17,12 +17,12 @@ protocol PostsPresenterInputProtocol: AnyObject {
     var posts: [Post] { get }
 }
 
-// PostsPresenterOutputProtocol: Protocol that defines the methods the presenter can call on the view
-protocol PostsPresenterOutputProtocol {
-    func showPosts(_ posts: [Post])
-    func showUsers(_ users: [User])
+// PostsPresenterOutputProtocol: Protocol that defines the methods the presenter can call on the ViewState
+protocol PostsPresenterOutputProtocol: AnyObject {
+    func updatePosts(_ posts: [Post])
+    func updateUsers(_ users: [User])
     func showError(message: String)
     func postCreated()
-    func selectedUserChanged(id: UUID?)
+    func updateSelectedUser(id: UUID?)
     func showToast(message: String, type: ToastMessage.ToastType)
 }

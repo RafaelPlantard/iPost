@@ -8,19 +8,21 @@
 import SwiftUI
 
 struct CreatePostView: View {
-    @Environment(\.dismiss) private var dismiss
-    var presenter: PostsPresenterInputProtocol
-    @ObservedObject private var stateManager = ViewStateManager()
+    @Environment(\.dismiss) private var environmentDismiss
+    private var presenter: PostsPresenterInputProtocol
+    private var customDismiss: () -> Void
+    @ObservedObject private var viewState: CreatePostViewState
     
-    class ViewStateManager: ObservableObject {
-        @Published var selectedUser: User? = nil
-        @Published var users: [User] = []
-        @Published var selectedUserId: UUID? = nil
+    init(presenter: PostsPresenterInputProtocol, dismiss: @escaping () -> Void) {
+        self.presenter = presenter
+        self.customDismiss = dismiss
+        self.viewState = CreatePostViewState(presenter: presenter, dismiss: { dismiss() })
+        
+        // Connect viewState to presenter if using concrete PostsPresenter
+        if let presenter = presenter as? PostsPresenter {
+            presenter.viewState = viewState
+        }
     }
-    
-    @State private var postText: String = ""
-    @State private var selectedImageName: String?
-    @State private var showImagePicker = false
     
     // Sample system images for selection
     private let availableImages = [
@@ -35,14 +37,14 @@ struct CreatePostView: View {
             Form {
                 Section {
                     // Post content
-                    TextField("What's on your mind?", text: $postText, axis: .vertical)
+                    TextField("What's on your mind?", text: $viewState.postText, axis: .vertical)
                         .textFieldStyle(.plain)
                         .frame(minHeight: 100, alignment: .topLeading)
                 }
                 
                 Section("Add an image") {
                     // Selected image preview
-                    if let imageName = selectedImageName {
+                    if let imageName = viewState.selectedImageName {
                         HStack {
                             Spacer()
                             VStack {
@@ -53,7 +55,7 @@ struct CreatePostView: View {
                                     .foregroundColor(.accentColor)
                                 
                                 Button("Remove Image") {
-                                    selectedImageName = nil
+                                    viewState.removeImage()
                                 }
                                 .foregroundColor(.red)
                                 .padding(.top, 8)
@@ -62,7 +64,7 @@ struct CreatePostView: View {
                         }
                     } else {
                         Button(action: {
-                            showImagePicker = true
+                            viewState.showImagePickerView()
                         }) {
                             Label("Select an Image", systemImage: "photo.on.rectangle.angled")
                         }
@@ -72,14 +74,14 @@ struct CreatePostView: View {
                 // User information
                 Section("Posting as") {
                     HStack {
-                        Image(systemName: stateManager.selectedUser?.profileImageName ?? "person.circle")
+                        Image(systemName: viewState.selectedUser?.profileImageName ?? "person.circle")
                             .font(.title2)
                             .foregroundColor(.blue)
                         
                         VStack(alignment: .leading) {
-                            Text(stateManager.selectedUser?.name ?? "Select a user")
+                            Text(viewState.selectedUser?.name ?? "Select a user")
                                 .font(.headline)
-                            if let username = stateManager.selectedUser?.username {
+                            if let username = viewState.selectedUser?.username {
                                 Text(username)
                                     .font(.subheadline)
                                     .foregroundColor(.gray)
@@ -90,28 +92,23 @@ struct CreatePostView: View {
             }
             .navigationTitle("Create Post")
             .navigationBarTitleDisplayMode(.inline)
-            .onAppear {
-                // Initialize the state manager with data from the presenter
-                stateManager.users = presenter.users
-                stateManager.selectedUserId = presenter.selectedUserId
-                stateManager.selectedUser = presenter.users.first(where: { $0.id == presenter.selectedUserId })
-            }
+            // No need for onAppear - ViewState is initialized with presenter data
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button("Cancel") {
-                        dismiss()
+                        viewState.dismissView()
                     }
                 }
                 
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Post") {
-                        createPost()
+                        viewState.createPost()
                     }
-                    .disabled(postText.isEmpty || stateManager.selectedUserId == nil)
+                    .disabled(viewState.postText.isEmpty || viewState.selectedUserId == nil)
                     .bold()
                 }
             }
-            .sheet(isPresented: $showImagePicker) {
+            .sheet(isPresented: $viewState.showImagePicker) {
                 imagePicker
             }
         }
@@ -135,8 +132,7 @@ struct CreatePostView: View {
                                 .font(.caption)
                         }
                         .onTapGesture {
-                            selectedImageName = imageName
-                            showImagePicker = false
+                            viewState.selectImage(imageName)
                         }
                     }
                 }
@@ -147,59 +143,15 @@ struct CreatePostView: View {
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Cancel") {
-                        showImagePicker = false
+                        viewState.hideImagePickerView()
                     }
                 }
             }
         }
     }
     
-    private func createPost() {
-        // Save a copy of the entered text in case we need to restore it
-        let savedText = postText
-        let savedImageName = selectedImageName
-        
-        // Call the presenter to create the post
-        presenter.createPost(text: savedText, imageName: savedImageName)
-        
-        // Direct dismiss approach in addition to the protocol method
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-            dismiss()
-        }
-    }
+    // createPost moved to ViewState
 }
 
-extension CreatePostView: PostsPresenterOutputProtocol {
-    func showPosts(_ posts: [Post]) {
-        // Not needed in this view
-    }
-
-    func showUsers(_ users: [User]) {
-        stateManager.users = users
-    }
-
-    func showError(message: String) {
-        // Handle error message if needed
-    }
-
-    func postCreated() {
-        // Clear fields before dismissing
-        postText = ""
-        selectedImageName = nil
-        showImagePicker = false
-        
-        // Force UI update before dismissing
-        DispatchQueue.main.async {
-            dismiss()
-        }
-    }
-
-    func selectedUserChanged(id: UUID?) {
-        stateManager.selectedUserId = id
-        stateManager.selectedUser = stateManager.users.first(where: { $0.id == id })
-    }
-
-    func showToast(message: String, type: ToastMessage.ToastType) {
-        // Toast will be shown in the parent view
-    }
-}
+// The CreatePostView no longer directly conforms to PostsPresenterOutputProtocol
+// Instead, the ViewState acts as this bridge

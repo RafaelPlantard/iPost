@@ -20,19 +20,19 @@ final class PostsRouter: PostsRouterProtocol {
         // Create router
         let router = PostsRouter()
         
-        // Create interactor
-        let interactor = PostsInteractor(modelContext: modelContext)
+        // Create user preferences interactor for persistence
+        let userPreferencesInteractor = UserPreferencesInteractor()
         
-        // Create presenter first with a temporary dummy view implementation
+        // Create main interactor with dependencies
+        let interactor = PostsInteractor(modelContext: modelContext, userPreferencesInteractor: userPreferencesInteractor)
+        
+        // Create presenter (no view dependency)
         let presenter = PostsPresenter(interactor: interactor, router: router)
         
-        // Now create the real view with the presenter
+        // Create the view with presenter
         let view = PostsView(presenter: presenter)
         
-        // Update presenter with the real view
-        presenter.view = view
-        
-        // Set presenter references
+        // Set presenter references (view/viewState connection happens in the view initializer)
         router.presenter = presenter
         interactor.presenter = presenter
         
@@ -47,7 +47,13 @@ final class PostsRouter: PostsRouterProtocol {
             return AnyView(Text("No presenter available"))
         }
         
-        // Wrap the CreatePostView in a toast container
-        return AnyView(CreatePostView(presenter: presentingPresenter))
+        // Create view with dismiss callback - note this provides a protocol-based mechanism
+        // for the view to communicate back to the router when it needs to dismiss
+        return AnyView(CreatePostView(
+            presenter: presentingPresenter,
+            dismiss: { [weak self] in
+                // Any additional router-level cleanup could go here
+            }
+        ))
     }
 }
