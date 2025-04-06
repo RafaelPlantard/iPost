@@ -31,6 +31,7 @@ struct PostsView: View {
                 if !viewState.users.isEmpty {
                     userSelectionPicker
                         .padding(.top)
+                        .accessibilityIdentifier("user-picker")
                 }
                 
                 // Posts list content
@@ -64,6 +65,7 @@ struct PostsView: View {
                     List {
                         ForEach(viewState.posts) { post in
                             PostRowView(post: post)
+                                .accessibilityIdentifier("post-item")
                         }
                     }
                     .listStyle(.plain)
@@ -84,6 +86,7 @@ struct PostsView: View {
                         Image(systemName: "square.and.pencil")
                             .font(.title2)
                     }
+                    .accessibilityIdentifier("create-post-button")
                 }
             }
             .sheet(isPresented: $viewState.showCreatePostSheet) {
