@@ -29,7 +29,7 @@ final class PostsViewSnapshotTests: XCTestCase {
     @MainActor
     override func setUpWithError() throws {
         try super.setUpWithError()
-        
+
         // Set up test doubles
         mockInteractor = MockPostsInteractor()
         mockRouter = MockPostsRouter()
