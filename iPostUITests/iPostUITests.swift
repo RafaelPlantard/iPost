@@ -319,14 +319,12 @@ final class iPostUITests: XCTestCase {
 
         // Verify user picker exists
         // Try multiple approaches to find the user picker
-        let userPickerExists = app.otherElements["user-picker"].waitForExistence(timeout: 2) ||
-                            app.buttons.containing(NSPredicate(format: "label CONTAINS %@", "Select User")).firstMatch.exists ||
-                            app.buttons.containing(NSPredicate(format: "label CONTAINS %@", "POSTING AS")).firstMatch.exists
+        let userPickerExists = app.buttons["user-picker"].waitForExistence(timeout: 2)
 
         XCTAssertTrue(userPickerExists, "User picker should exist")
 
         // Get a reference to the user picker using whichever method works
-        let userPicker = app.otherElements["user-picker"].exists ? app.otherElements["user-picker"] :
+        let userPicker = app.buttons["user-picker"].exists ? app.buttons["user-picker"] :
                         app.buttons.containing(NSPredicate(format: "label CONTAINS %@", "Select User")).firstMatch.exists ?
                         app.buttons.containing(NSPredicate(format: "label CONTAINS %@", "Select User")).firstMatch :
                         app.buttons.containing(NSPredicate(format: "label CONTAINS %@", "POSTING AS")).firstMatch
