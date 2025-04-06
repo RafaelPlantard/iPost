@@ -237,7 +237,10 @@ final class MockPostsInteractor: PostsInteractorInputProtocol {
     var saveSelectedUserIdCalled = false
     var savedUserId: UUID?
     var getSelectedUserIdCalled = false
-    var mockSelectedUserId: UUID?
+    
+    // Since this is just for testing and UUID is a value type,
+    // we can make this nonisolated
+    nonisolated var mockSelectedUserId: UUID?
     
     func fetchPosts() async {
         fetchPostsCalled = true
@@ -259,17 +262,14 @@ final class MockPostsInteractor: PostsInteractorInputProtocol {
             saveSelectedUserIdCalled = true
             savedUserId = userId
         }
+        mockSelectedUserId = userId
     }
     
-    nonisolated func getSelectedUserId() async -> UUID? {
+    nonisolated func getSelectedUserId() -> UUID? {
         Task { @MainActor in
             getSelectedUserIdCalled = true
         }
-        // Create a local copy to avoid accessing actor-isolated property from nonisolated context
-        let localCopy: UUID? = await Task.detached { @MainActor [weak self] in
-            return self?.mockSelectedUserId
-        }.value
-        return localCopy
+        return mockSelectedUserId
     }
 }
 

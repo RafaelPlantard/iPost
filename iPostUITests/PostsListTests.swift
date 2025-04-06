@@ -5,7 +5,7 @@
 //  Created on 06/04/25.
 //
 
-import SwiftTesting
+import Testing
 import SwiftUI
 import SwiftData
 @testable import iPost
