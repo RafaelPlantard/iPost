@@ -10,10 +10,10 @@ import SwiftUI
 struct CreatePostView: View {
     @Environment(\.dismiss) private var environmentDismiss
     private var presenter: PostsPresenterInputProtocol
-    private var customDismiss: () -> Void
+    private var customDismiss: (() -> Void)?
     @ObservedObject private var viewState: CreatePostViewState
     
-    init(presenter: PostsPresenterInputProtocol, dismiss: @escaping () -> Void) {
+    init(presenter: PostsPresenterInputProtocol, dismiss: @escaping (() -> Void) = {}) {
         self.presenter = presenter
         self.customDismiss = dismiss
         self.viewState = CreatePostViewState(presenter: presenter, dismiss: { dismiss() })

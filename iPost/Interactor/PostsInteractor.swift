@@ -66,9 +66,20 @@ extension PostsInteractor: PostsInteractorInputProtocol {
     }
     func fetchPosts() {
         do {
-            let descriptor = FetchDescriptor<Post>(
+            // Clear any existing fetch cache to ensure fresh results
+            modelContext.processPendingChanges()
+            
+            // Create descriptor with explicit fetch policy for fresh results
+            var descriptor = FetchDescriptor<Post>(
                 sortBy: [SortDescriptor(\.timestamp, order: .reverse)]
             )
+            descriptor.fetchLimit = 50 // Limit to prevent performance issues
+            
+            #if DEBUG
+            // Force SwiftData to refresh in debug mode
+            descriptor.includePendingChanges = true
+            #endif
+            
             let posts = try modelContext.fetch(descriptor)
             presenter?.didFetchPosts(posts)
         } catch {
@@ -86,8 +97,20 @@ extension PostsInteractor: PostsInteractorInputProtocol {
         modelContext.insert(post)
         
         do {
+            // Ensure post is saved immediately
             try modelContext.save()
-            presenter?.didCreatePost(post)
+            
+            // Force a context refresh to ensure data consistency
+            modelContext.processPendingChanges()
+
+            // Delay the fetch slightly to allow the SwiftData backend to process
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
+                guard let self = self else { return }
+                // Fetch posts again to refresh the UI with the new post
+                self.fetchPosts()
+                // Notify presenter of successful creation
+                self.presenter?.didCreatePost(post)
+            }
         } catch {
             presenter?.onError(message: "Failed to create post: \(error.localizedDescription)")
         }

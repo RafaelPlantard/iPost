@@ -38,15 +38,15 @@ extension PostsPresenter: PostsPresenterInputProtocol {
             return
         }
         
-        // First notify viewState that post creation started (helps with animation timing)
-        DispatchQueue.main.async { [weak self] in
-            guard let self = self else { return }
-            // Show toast first for better UX - it will appear as the modal animates away
-            self.viewState?.showToast(message: "Creating post...", type: .info)
-        }
+        // Show creating toast before dispatching to avoid UI hang
+        viewState?.showToast(message: "Creating post...", type: .info)
         
-        // Call the interactor directly - viewState will handle UI updates
-        interactor.createPost(text: text, imageName: imageName, forUser: userId)
+        // Dispatch the creation to avoid blocking the UI thread
+        // This helps prevent SwiftData-related hangs
+        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+            guard let self = self else { return }
+            self.interactor.createPost(text: text, imageName: imageName, forUser: userId)
+        }
     }
     
     func selectUser(id: UUID) {
@@ -80,17 +80,16 @@ extension PostsPresenter: PostsInteractorOutputProtocol {
     }
     
     func didCreatePost(_ post: Post) {
-        // Refresh posts after creating a new one
-        interactor.fetchPosts()
-        
-        // First notify the viewState to close the sheet
+        // Notify view that post was created so it can dismiss sheet immediately
         viewState?.postCreated()
         
-        // Show success toast after a slight delay to ensure it appears after modal dismissal
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
-            guard let self = self else { return }
-            self.viewState?.showToast(message: "Post created successfully!", type: .success)
+        // Show success toast after a small delay to allow the modal to dismiss first
+        // This avoids potential UI jank during the dismissal animation
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
+            self?.viewState?.showToast(message: "Post created successfully!", type: .success)
         }
+        
+        // Note: We don't need to call fetchPosts() here anymore as the interactor does this for us
     }
     
     func onError(message: String) {

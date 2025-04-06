@@ -19,9 +19,9 @@ final class CreatePostViewState: ObservableObject, PostsPresenterOutputProtocol 
     
     // Reference to the presenter for sending user actions
     private weak var presenter: PostsPresenterInputProtocol?
-    private let dismiss: () -> Void
-    
-    init(presenter: PostsPresenterInputProtocol, dismiss: @escaping () -> Void) {
+    private let dismiss: (() -> Void)?
+
+    init(presenter: PostsPresenterInputProtocol, dismiss: @escaping (() -> Void)) {
         self.presenter = presenter
         self.dismiss = dismiss
         
@@ -34,7 +34,7 @@ final class CreatePostViewState: ObservableObject, PostsPresenterOutputProtocol 
     // MARK: - User actions
     
     func createPost() {
-        guard let userId = selectedUserId else {
+        guard selectedUserId != nil else {
             // Handle error - need to select a user first
             return
         }
@@ -51,7 +51,7 @@ final class CreatePostViewState: ObservableObject, PostsPresenterOutputProtocol 
         
         // Dismiss the view
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-            self.dismiss()
+            self.dismiss?()
         }
     }
     
@@ -74,7 +74,7 @@ final class CreatePostViewState: ObservableObject, PostsPresenterOutputProtocol 
     
     func dismissView() {
         clearForm()
-        dismiss()
+        dismiss?()
     }
     
     // MARK: - PostsPresenterOutputProtocol Implementation
@@ -97,7 +97,7 @@ final class CreatePostViewState: ObservableObject, PostsPresenterOutputProtocol 
     
     func postCreated() {
         clearForm()
-        dismiss()
+        dismiss?()
     }
     
     // MARK: - State updates

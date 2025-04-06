@@ -28,7 +28,10 @@ final class PostsViewState: ObservableObject, PostsPresenterOutputProtocol {
     // MARK: - User actions
     
     func loadInitialData() {
-        presenter?.viewDidLoad()
+        // Ensure UI is updated on the main thread
+        DispatchQueue.main.async { [self] in
+            presenter?.viewDidLoad()
+        }
     }
     
     func selectUser(id: UUID) {
@@ -50,11 +53,15 @@ final class PostsViewState: ObservableObject, PostsPresenterOutputProtocol {
     // MARK: - PostsPresenterOutputProtocol Implementation
     
     func updatePosts(_ posts: [Post]) {
-        self.posts = posts
+        DispatchQueue.main.async { [weak self] in
+            self?.posts = posts
+        }
     }
     
     func updateUsers(_ users: [User]) {
-        self.users = users
+        DispatchQueue.main.async { [weak self] in
+            self?.users = users
+        }
     }
     
     func updateSelectedUser(id: UUID?) {
@@ -62,15 +69,29 @@ final class PostsViewState: ObservableObject, PostsPresenterOutputProtocol {
     }
     
     func showError(message: String) {
-        self.errorMessage = message
-        self.showingError = true
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self else { return }
+            self.errorMessage = message
+            self.showingError = true
+        }
     }
     
     func showToast(message: String, type: ToastMessage.ToastType) {
-        self.toast = ToastMessage(message: message, type: type)
+        DispatchQueue.main.async { [weak self] in
+            self?.toast = ToastMessage(message: message, type: type)
+        }
     }
     
     func postCreated() {
-        self.showCreatePostSheet = false
+        DispatchQueue.main.async { [weak self] in
+            // First hide the sheet
+            self?.showCreatePostSheet = false
+            
+            // Trigger a UI update by asking presenter to reload posts
+            // We do this after a short delay to ensure the sheet has time to dismiss
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) { [self] in
+                self?.presenter?.viewDidLoad()
+            }
+        }
     }
 }

@@ -49,11 +49,6 @@ final class PostsRouter: PostsRouterProtocol {
         
         // Create view with dismiss callback - note this provides a protocol-based mechanism
         // for the view to communicate back to the router when it needs to dismiss
-        return AnyView(CreatePostView(
-            presenter: presentingPresenter,
-            dismiss: { [weak self] in
-                // Any additional router-level cleanup could go here
-            }
-        ))
+        return AnyView(CreatePostView(presenter: presentingPresenter))
     }
 }
