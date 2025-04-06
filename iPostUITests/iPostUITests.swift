@@ -38,31 +38,31 @@ final class iPostUITests: XCTestCase {
         XCTAssertTrue(app.navigationBars["iPosts"].exists)
         
         // Tap the create post button
-        let createPostButton = app.buttons["Create Post"]
+        let createPostButton = app.buttons["create-post-button"]
         XCTAssertTrue(createPostButton.exists, "Create Post button should exist")
         createPostButton.tap()
         
-        // Wait for create post view to appear
-        let createPostView = app.otherElements["create-post-view"]
-        let createPostViewExists = createPostView.waitForExistence(timeout: 2)
+        // Wait for navigation title to show we're in create post view
+        let createPostNavTitle = app.navigationBars["Create Post"]
+        let createPostViewExists = createPostNavTitle.waitForExistence(timeout: 2)
         XCTAssertTrue(createPostViewExists, "Create post view should appear")
         
-        // Enter post text
+        // Enter post text - Find the text field by placeholder text
         let uniquePostText = "Test post created at \(Date().formatted(date: .numeric, time: .standard))"
-        let textField = app.textFields["post-text-field"]
+        let textField = app.textFields["What's on your mind?"]
         XCTAssertTrue(textField.exists, "Post text field should exist")
         textField.tap()
         textField.typeText(uniquePostText)
         
-        // Submit the post
-        let submitButton = app.buttons["submit-button"]
-        XCTAssertTrue(submitButton.exists, "Submit button should exist")
+        // Submit the post using the "Post" button
+        let submitButton = app.buttons["Post"]
+        XCTAssertTrue(submitButton.exists, "Post button should exist")
         submitButton.tap()
         
-        // Verify we return to the post list
-        let postsList = app.otherElements["posts-list"]
-        let postsListExists = postsList.waitForExistence(timeout: 2)
-        XCTAssertTrue(postsListExists, "Posts list should reappear after submitting")
+        // Verify we return to the main screen by checking for navigation title
+        let postsNavTitle = app.navigationBars["iPosts"]
+        let postsScreenExists = postsNavTitle.waitForExistence(timeout: 2)
+        XCTAssertTrue(postsScreenExists, "Posts screen should reappear after submitting")
         
         // Verify the new post appears in the list
         let postText = app.staticTexts[uniquePostText]
