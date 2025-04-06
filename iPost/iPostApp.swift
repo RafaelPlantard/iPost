@@ -12,7 +12,8 @@ import SwiftData
 struct iPostApp: App {
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([
-            Item.self,
+            User.self,
+            Post.self
         ])
         let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
 
@@ -25,8 +26,17 @@ struct iPostApp: App {
 
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            MainView()
+                .modelContainer(sharedModelContainer)
         }
-        .modelContainer(sharedModelContainer)
+    }
+}
+
+struct MainView: View {
+    @Environment(\.modelContext) private var modelContext
+    
+    var body: some View {
+        let (view, presenter) = PostsRouter.createModule(modelContext: modelContext)
+        return view
     }
 }
