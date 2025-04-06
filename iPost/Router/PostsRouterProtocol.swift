@@ -8,6 +8,7 @@
 import SwiftUI
 
 // PostsRouterProtocol: Protocol that defines the methods for navigating between views
+@MainActor
 protocol PostsRouterProtocol {
     func makeCreatePostView() -> AnyView
 }

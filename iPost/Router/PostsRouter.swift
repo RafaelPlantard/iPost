@@ -9,6 +9,7 @@ import SwiftUI
 import SwiftData
 
 // MARK: - PostsRouter
+@MainActor
 final class PostsRouter: PostsRouterProtocol {
     private weak var presenter: PostsPresenterInputProtocol?
     
@@ -16,6 +17,7 @@ final class PostsRouter: PostsRouterProtocol {
         self.presenter = presenter
     }
     
+    @MainActor
     static func createModule(modelContext: ModelContext) -> (view: AnyView, presenter: PostsPresenterInputProtocol) {
         // Create router
         let router = PostsRouter()
@@ -41,6 +43,7 @@ final class PostsRouter: PostsRouterProtocol {
 
     // MARK: - PostsRouterProtocol Implementation
 
+    @MainActor
     func makeCreatePostView() -> AnyView {
         // In a more complex app, we might pass dependencies here
         guard let presentingPresenter = presenter else {

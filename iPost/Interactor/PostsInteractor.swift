@@ -18,6 +18,7 @@ protocol PostsInteractorInputProtocol {
 }
 
 // PostsInteractorOutputProtocol: Protocol that defines the methods the interactor can call on the presenter
+@MainActor
 protocol PostsInteractorOutputProtocol: AnyObject {
     func didFetchPosts(_ posts: [Post])
     func didFetchUsers(_ users: [User])
@@ -27,6 +28,7 @@ protocol PostsInteractorOutputProtocol: AnyObject {
 }
 
 // MARK: - PostsInteractor
+@MainActor
 final class PostsInteractor: PostsInteractorInputProtocol {
     weak var presenter: PostsInteractorOutputProtocol?
     private var modelContext: ModelContext
@@ -61,7 +63,6 @@ final class PostsInteractor: PostsInteractorInputProtocol {
         return userPreferencesInteractor.getSelectedUserId()
     }
     
-    @MainActor
     func fetchPosts() async {
         do {
             // Clear any existing fetch cache to ensure fresh results
@@ -85,7 +86,6 @@ final class PostsInteractor: PostsInteractorInputProtocol {
         }
     }
     
-    @MainActor
     func createPost(text: String, imageName: String?, forUser userId: UUID) async {
         guard let user = fetchUser(withId: userId) else {
             presenter?.onError(message: "User not found")
@@ -115,7 +115,6 @@ final class PostsInteractor: PostsInteractorInputProtocol {
         }
     }
     
-    @MainActor
     func fetchUsers() async {
         do {
             let descriptor = FetchDescriptor<User>()
@@ -145,7 +144,6 @@ final class PostsInteractor: PostsInteractorInputProtocol {
         }
     }
     
-    @MainActor
     private func setupDummyUsers() async {
         // Create sample users
         let users = [

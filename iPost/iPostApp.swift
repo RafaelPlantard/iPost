@@ -42,12 +42,24 @@ struct iPostApp: App {
     }
 }
 
+@MainActor
 struct MainView: View {
     @Environment(\.modelContext) private var modelContext
+    @State private var contentView: AnyView? = nil
     
     var body: some View {
-        let (view, _) = PostsRouter.createModule(modelContext: modelContext)
-
-        return view
+        ZStack {
+            if let view = contentView {
+                view
+            } else {
+                ProgressView("Loading...")
+                    .onAppear {
+                        Task { @MainActor in
+                            let (view, _) = PostsRouter.createModule(modelContext: modelContext)
+                            contentView = view
+                        }
+                    }
+            }
+        }
     }
 }

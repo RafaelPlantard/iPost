@@ -8,6 +8,7 @@
 import Foundation
 
 // PostsPresenterInputProtocol: Protocol that defines the methods the view can call on the presenter
+@MainActor
 protocol PostsPresenterInputProtocol: AnyObject {
     var selectedUserId: UUID? { get }
     
@@ -18,6 +19,7 @@ protocol PostsPresenterInputProtocol: AnyObject {
 }
 
 // PostsPresenterOutputProtocol: Protocol that defines the methods the presenter can call on the ViewState
+@MainActor
 protocol PostsPresenterOutputProtocol: AnyObject {
     // View state updates
     func updatePosts(_ posts: [Post])

@@ -56,20 +56,20 @@ extension PostsPresenter: PostsPresenterInputProtocol {
         }
     }
     
-    func selectUser(id: UUID) {
+    func selectUser(id: UUID) async {
         selectedUserId = id
         // Notify the viewState of the user change
         viewState?.updateSelectedUser(id: id)
         // Save the selected user to persist between app launches
         interactor.saveSelectedUserId(id)
         // When a user is selected, we might want to refresh the feed
-        fetchPosts()
+        await fetchPosts()
     }
     
-    func fetchPosts() {
+    func fetchPosts() async {
         // Show a loading state first
         viewState?.isLoading = true
-        interactor.fetchPosts()
+        await interactor.fetchPosts()
     }
 }
 
@@ -88,7 +88,7 @@ extension PostsPresenter: PostsInteractorOutputProtocol {
         viewState?.updatePosts(updatedPosts)
     }
     
-    func didFetchUsers(_ users: [User]) {
+    func didFetchUsers(_ users: [User]) async {
         // Make a copy of the array to ensure we're working with a new instance
         let updatedUsers = Array(users)
         self.users = updatedUsers
@@ -98,7 +98,7 @@ extension PostsPresenter: PostsInteractorOutputProtocol {
         
         // If no user is selected, select the first one
         if selectedUserId == nil && !updatedUsers.isEmpty {
-            selectUser(id: updatedUsers[0].id)
+            await selectUser(id: updatedUsers[0].id)
         }
     }
     
