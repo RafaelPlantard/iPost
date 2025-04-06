@@ -227,58 +227,6 @@ struct PostsPresenterTests {
 // MARK: - Test Doubles
 
 @MainActor
-final class MockPostsInteractor: PostsInteractorInputProtocol {
-    var fetchPostsCalled = false
-    var fetchUsersCalled = false
-    var createPostCalled = false
-    var createPostText: String?
-    var createPostImageName: String?
-    var createPostUserId: UUID?
-    var saveSelectedUserIdCalled = false
-    var savedUserId: UUID?
-    var getSelectedUserIdCalled = false
-    
-    // Now can be simple property since everything is on the main actor
-    private var selectedUserId: UUID?
-    
-    func fetchPosts() async {
-        fetchPostsCalled = true
-    }
-    
-    func createPost(text: String, imageName: String?, forUser userId: UUID) async {
-        createPostCalled = true
-        createPostText = text
-        createPostImageName = imageName
-        createPostUserId = userId
-    }
-    
-    func fetchUsers() async {
-        fetchUsersCalled = true
-    }
-    
-    func saveSelectedUserId(_ userId: UUID?) {
-        selectedUserId = userId
-        saveSelectedUserIdCalled = true
-        savedUserId = userId
-    }
-    
-    func getSelectedUserId() -> UUID? {
-        getSelectedUserIdCalled = true
-        return selectedUserId
-    }
-}
-
-@MainActor
-final class MockPostsRouter: PostsRouterProtocol {
-    var makeCreatePostViewCalled = false
-    
-    func makeCreatePostView() -> SwiftUI.AnyView {
-        makeCreatePostViewCalled = true
-        return SwiftUI.AnyView(Text("Mock Create Post View"))
-    }
-}
-
-@MainActor
 final class MockPostsViewState: PostsPresenterOutputProtocol {
     var isLoading: Bool = false
     
