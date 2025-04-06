@@ -11,8 +11,6 @@ import SwiftData
 import SnapshotTesting
 @testable import iPosts
 
-
-
 /// Snapshot tests for the CreatePostView component.
 /// These tests verify the visual appearance of the CreatePostView in different states.
 @MainActor
