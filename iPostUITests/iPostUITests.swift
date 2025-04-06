@@ -68,13 +68,26 @@ final class iPostUITests: XCTestCase {
         // Enter post text in the TextEditor (not TextField)
         let uniquePostText = "Test post created at \(Date().formatted(date: .numeric, time: .standard))"
 
-        // Look for the text editor - try multiple approaches
-        let textEditorExists = app.textViews.firstMatch.waitForExistence(timeout: 2) ||
-                             app.textViews.element.waitForExistence(timeout: 2)
-        XCTAssertTrue(textEditorExists, "Post text editor should exist")
+        // Look for the text editor using the accessibility identifier
+        var textEditorArea = app.textViews["post-text-editor"]
+        let textEditorExists = textEditorArea.waitForExistence(timeout: 2)
 
-        // Find the text editor
-        let textEditorArea = app.textViews.firstMatch.exists ? app.textViews.firstMatch : app.textViews.element
+        // If the identifier doesn't work, fall back to the previous approach
+        if !textEditorExists {
+            print("Warning: Could not find post-text-editor by identifier, trying alternative methods")
+            let fallbackExists = app.textViews.firstMatch.waitForExistence(timeout: 2) ||
+                               app.textViews.element.waitForExistence(timeout: 2)
+            XCTAssertTrue(fallbackExists, "Post text editor should exist")
+
+            // Reassign textEditorArea to the fallback element
+            if !textEditorExists {
+                if app.textViews.firstMatch.exists {
+                    textEditorArea = app.textViews.firstMatch
+                } else {
+                    textEditorArea = app.textViews.element
+                }
+            }
+        }
         textEditorArea.tap()
         textEditorArea.typeText(uniquePostText)
 
@@ -106,20 +119,41 @@ final class iPostUITests: XCTestCase {
                 firstImage.tap()
             }
 
-            // If we can't select an image, dismiss the picker
-            // Try different ways to find the cancel button
-            let cancelButton = app.buttons["Cancel"].exists ? app.buttons["Cancel"] :
-                             app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "Cancel")).firstMatch
+            // If we can't select an image, dismiss the picker using the specific cancel button
+            let cancelButton = app.buttons["image-picker-cancel-button"]
 
-            if cancelButton.exists {
+            // Wait a moment for the button to be fully interactive
+            if cancelButton.waitForExistence(timeout: 2) {
                 cancelButton.tap()
+            } else {
+                // Fallback to other methods if the identifier doesn't work
+                print("Warning: Could not find image-picker-cancel-button, trying alternative methods")
+
+                // Try to find the navigation bar's cancel button specifically
+                let navBar = app.navigationBars["Select Image"]
+                let cancelInBar = navBar.buttons.matching(NSPredicate(format: "label CONTAINS %@", "Cancel")).firstMatch
+
+                if cancelInBar.exists {
+                    cancelInBar.tap()
+                } else {
+                    // Last resort - try to tap outside the picker to dismiss it
+                    app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.1)).tap()
+                }
             }
         }
 
         // Submit the post using the "Post" button with gradient background
-        let submitButton = app.buttons["Post"]
-        XCTAssertTrue(submitButton.exists, "Post button should exist")
-        submitButton.tap()
+        let submitButton = app.buttons["create-post-submit-button"]
+
+        // If the identifier doesn't work, fall back to finding by label
+        if !submitButton.waitForExistence(timeout: 2) {
+            print("Warning: Could not find create-post-submit-button by identifier, trying by label")
+            let fallbackButton = app.buttons["Post"]
+            XCTAssertTrue(fallbackButton.exists, "Post button should exist")
+            fallbackButton.tap()
+        } else {
+            submitButton.tap()
+        }
 
         // Verify we return to the main screen by checking for navigation title
         let postsNavTitle = app.navigationBars["iPosts"]
@@ -191,20 +225,41 @@ final class iPostUITests: XCTestCase {
         // Enter post text in the TextEditor
         let uniquePostText = "Toast test post created at \(Date().formatted(date: .numeric, time: .standard))"
 
-        // Look for the text editor - try multiple approaches
-        let textEditorExists = app.textViews.firstMatch.waitForExistence(timeout: 2) ||
-                             app.textViews.element.waitForExistence(timeout: 2)
-        XCTAssertTrue(textEditorExists, "Post text editor should exist")
+        // Look for the text editor using the accessibility identifier
+        var textEditorArea = app.textViews["post-text-editor"]
+        let textEditorExists = textEditorArea.waitForExistence(timeout: 2)
 
-        // Find the text editor
-        let textEditorArea = app.textViews.firstMatch.exists ? app.textViews.firstMatch : app.textViews.element
+        // If the identifier doesn't work, fall back to the previous approach
+        if !textEditorExists {
+            print("Warning: Could not find post-text-editor by identifier, trying alternative methods")
+            let fallbackExists = app.textViews.firstMatch.waitForExistence(timeout: 2) ||
+                               app.textViews.element.waitForExistence(timeout: 2)
+            XCTAssertTrue(fallbackExists, "Post text editor should exist")
+
+            // Reassign textEditorArea to the fallback element
+            if !textEditorExists {
+                if app.textViews.firstMatch.exists {
+                    textEditorArea = app.textViews.firstMatch
+                } else {
+                    textEditorArea = app.textViews.element
+                }
+            }
+        }
         textEditorArea.tap()
         textEditorArea.typeText(uniquePostText)
 
         // Submit the post using the "Post" button with gradient background
-        let submitButton = app.buttons["Post"]
-        XCTAssertTrue(submitButton.exists, "Post button should exist")
-        submitButton.tap()
+        let submitButton = app.buttons["create-post-submit-button"]
+
+        // If the identifier doesn't work, fall back to finding by label
+        if !submitButton.waitForExistence(timeout: 2) {
+            print("Warning: Could not find create-post-submit-button by identifier, trying by label")
+            let fallbackButton = app.buttons["Post"]
+            XCTAssertTrue(fallbackButton.exists, "Post button should exist")
+            fallbackButton.tap()
+        } else {
+            submitButton.tap()
+        }
 
         // Verify the toast message appears with the new design
         // The toast now has a gradient background, icon, and dismiss button
@@ -313,20 +368,41 @@ final class iPostUITests: XCTestCase {
         // Enter post text
         let uniquePostText = "User selection test post created at \(Date().formatted(date: .numeric, time: .standard))"
 
-        // Look for the text editor - try multiple approaches
-        let textEditorExists = app.textViews.firstMatch.waitForExistence(timeout: 2) ||
-                             app.textViews.element.waitForExistence(timeout: 2)
-        XCTAssertTrue(textEditorExists, "Post text editor should exist")
+        // Look for the text editor using the accessibility identifier
+        var textEditorArea = app.textViews["post-text-editor"]
+        let textEditorExists = textEditorArea.waitForExistence(timeout: 2)
 
-        // Find the text editor
-        let textEditorArea = app.textViews.firstMatch.exists ? app.textViews.firstMatch : app.textViews.element
+        // If the identifier doesn't work, fall back to the previous approach
+        if !textEditorExists {
+            print("Warning: Could not find post-text-editor by identifier, trying alternative methods")
+            let fallbackExists = app.textViews.firstMatch.waitForExistence(timeout: 2) ||
+                               app.textViews.element.waitForExistence(timeout: 2)
+            XCTAssertTrue(fallbackExists, "Post text editor should exist")
+
+            // Reassign textEditorArea to the fallback element
+            if !textEditorExists {
+                if app.textViews.firstMatch.exists {
+                    textEditorArea = app.textViews.firstMatch
+                } else {
+                    textEditorArea = app.textViews.element
+                }
+            }
+        }
         textEditorArea.tap()
         textEditorArea.typeText(uniquePostText)
 
-        // Submit the post
-        let submitButton = app.buttons["Post"]
-        XCTAssertTrue(submitButton.exists, "Post button should exist")
-        submitButton.tap()
+        // Submit the post using the "Post" button with gradient background
+        let submitButton = app.buttons["create-post-submit-button"]
+
+        // If the identifier doesn't work, fall back to finding by label
+        if !submitButton.waitForExistence(timeout: 2) {
+            print("Warning: Could not find create-post-submit-button by identifier, trying by label")
+            let fallbackButton = app.buttons["Post"]
+            XCTAssertTrue(fallbackButton.exists, "Post button should exist")
+            fallbackButton.tap()
+        } else {
+            submitButton.tap()
+        }
 
         // Verify we return to the main screen
         let postsNavTitle = app.navigationBars["iPosts"]

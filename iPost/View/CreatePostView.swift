@@ -112,6 +112,7 @@ struct CreatePostView: View {
                                     RoundedRectangle(cornerRadius: 12)
                                         .stroke(Color.gray.opacity(0.2), lineWidth: 1)
                                 )
+                                .accessibilityIdentifier("post-text-editor")
                         }
                         .padding(16)
                         .background(
@@ -237,6 +238,7 @@ struct CreatePostView: View {
                                 )
                         }
                         .disabled(viewState.postText.isEmpty || viewState.selectedUserId == nil)
+                        .accessibilityIdentifier("create-post-submit-button")
                     }
                     .padding(16)
                 }
@@ -374,6 +376,7 @@ struct CreatePostView: View {
                             .fontWeight(.medium)
                             .foregroundColor(.secondary)
                     }
+                    .accessibilityIdentifier("image-picker-cancel-button")
                 }
             }
         }
