@@ -5,10 +5,12 @@
 //  Created on 06/04/25.
 //
 
-import SwiftTesting
+import Foundation
+import Testing
 import SwiftData
 @testable import iPost
 
+@MainActor
 @Suite("PostsInteractor Tests")
 struct PostsInteractorTests {
     @Test("Fetch users when database is empty should create dummy users")
@@ -28,6 +30,7 @@ struct PostsInteractorTests {
         await sut.fetchUsers()
         
         // THEN
+        try await Task.sleep(for: .milliseconds(100)) // Wait for async operations to complete
         try #expect(mockPresenter.didFetchUsersCalled)
         try #expect(!mockPresenter.didFetchUsersList.isEmpty)
         try #expect(mockPresenter.didFetchUsersList.count == 3) // We expect 3 dummy users
@@ -90,6 +93,9 @@ struct PostsInteractorTests {
         // WHEN
         await sut.fetchPosts()
         
+        // Allow async operations to complete
+        try await Task.sleep(for: .milliseconds(100))
+        
         // THEN
         try #expect(mockPresenter.didFetchPostsCalled)
         try #expect(mockPresenter.didFetchPostsList.count == 2)
@@ -119,6 +125,9 @@ struct PostsInteractorTests {
         // WHEN
         await sut.createPost(text: "Test post content", imageName: "star.fill", forUser: user.id)
         
+        // Allow async operations to complete
+        try await Task.sleep(for: .milliseconds(100))
+        
         // THEN
         try #expect(mockPresenter.didCreatePostCalled)
         try #expect(mockPresenter.didCreatePostParam?.text == "Test post content")
@@ -133,7 +142,7 @@ struct PostsInteractorTests {
     }
     
     @Test("Save selected user ID should store value in preferences")
-    func saveSelectedUserId() throws {
+    func saveSelectedUserId() async throws {
         // GIVEN
         let testContainer = try TestContainer()
         let mockPresenter = MockPostsInteractorOutput()
@@ -154,22 +163,22 @@ struct PostsInteractorTests {
     }
     
     @Test("Get selected user ID should retrieve value from preferences")
-    func getSelectedUserId() throws {
+    func getSelectedUserId() async throws {
         // GIVEN
         let testContainer = try TestContainer()
         let mockPresenter = MockPostsInteractorOutput()
         let mockUserPreferences = MockUserPreferencesInteractor()
+        
+        let userId = UUID()
+        mockUserPreferences.savedUserId = userId
         
         let sut = PostsInteractor(
             modelContext: testContainer.mainContext,
             userPreferencesInteractor: mockUserPreferences
         )
         
-        let userId = UUID()
-        mockUserPreferences.savedUserId = userId
-        
         // WHEN
-        let result = sut.getSelectedUserId()
+        let result = await sut.getSelectedUserId()
         
         // THEN
         try #expect(result == userId)
@@ -178,6 +187,7 @@ struct PostsInteractorTests {
 
 // MARK: - Test Doubles
 
+@MainActor
 final class MockPostsInteractorOutput: PostsInteractorOutputProtocol {
     var didFetchPostsCalled = false
     var didFetchPostsList: [Post] = []
@@ -199,7 +209,7 @@ final class MockPostsInteractorOutput: PostsInteractorOutputProtocol {
         didFetchPostsList = posts
     }
     
-    func didFetchUsers(_ users: [User]) {
+    func didFetchUsers(_ users: [User]) async {
         didFetchUsersCalled = true
         didFetchUsersList = users
     }
@@ -220,6 +230,7 @@ final class MockPostsInteractorOutput: PostsInteractorOutputProtocol {
     }
 }
 
+@MainActor
 final class MockUserPreferencesInteractor: UserPreferencesInteractorInputProtocol {
     var savedUserId: UUID?
     
@@ -234,6 +245,7 @@ final class MockUserPreferencesInteractor: UserPreferencesInteractorInputProtoco
 
 // MARK: - Test Helpers
 
+@MainActor
 final class TestContainer {
     let container: ModelContainer
     var mainContext: ModelContext { container.mainContext }

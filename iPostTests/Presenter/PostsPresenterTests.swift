@@ -5,7 +5,10 @@
 //  Created on 06/04/25.
 //
 
-import SwiftTesting
+import Foundation
+import SwiftUI
+import SwiftData
+import Testing
 @testable import iPost
 
 @MainActor
@@ -33,7 +36,7 @@ struct PostsPresenterTests {
     }
     
     @Test("createPost with no selected user should show error")
-    func createPostWithNoSelectedUserShowsError() throws {
+    func createPostWithNoSelectedUserShowsError() async throws {
         // GIVEN
         let mockInteractor = MockPostsInteractor()
         let mockRouter = MockPostsRouter()
@@ -41,10 +44,9 @@ struct PostsPresenterTests {
         
         let sut = PostsPresenter(interactor: mockInteractor, router: mockRouter)
         sut.viewState = mockViewState
-        sut.selectedUserId = nil
         
         // WHEN
-        sut.createPost(text: "Test post", imageName: nil)
+        await sut.createPost(text: "Test post", imageName: nil)
         
         // THEN
         try #expect(mockViewState.showErrorCalled)
@@ -66,7 +68,7 @@ struct PostsPresenterTests {
         sut.selectedUserId = userId
         
         // WHEN
-        sut.createPost(text: "Test post", imageName: "image.name")
+        await sut.createPost(text: "Test post", imageName: "image.name")
         
         // Wait for async tasks to complete
         try await Task.sleep(for: .milliseconds(200))
@@ -83,7 +85,7 @@ struct PostsPresenterTests {
     }
     
     @Test("selectUser should update selectedUserId and notify viewState")
-    func selectUserUpdatesSelectedUserId() throws {
+    func selectUserUpdatesSelectedUserId() async throws {
         // GIVEN
         let mockInteractor = MockPostsInteractor()
         let mockRouter = MockPostsRouter()
@@ -95,7 +97,7 @@ struct PostsPresenterTests {
         let userId = UUID()
         
         // WHEN
-        sut.selectUser(id: userId)
+        await sut.selectUser(id: userId)
         
         // THEN
         try #expect(sut.selectedUserId == userId)
@@ -106,7 +108,7 @@ struct PostsPresenterTests {
     }
     
     @Test("didFetchPosts should update viewState with posts")
-    func didFetchPostsUpdatesViewState() throws {
+    func didFetchPostsUpdatesViewState() async throws {
         // GIVEN
         let mockInteractor = MockPostsInteractor()
         let mockRouter = MockPostsRouter()
@@ -122,7 +124,7 @@ struct PostsPresenterTests {
         ]
         
         // WHEN
-        sut.didFetchPosts(posts)
+        await sut.didFetchPosts(posts)
         
         // THEN
         try #expect(mockViewState.updatePostsCalled)
@@ -132,7 +134,7 @@ struct PostsPresenterTests {
     }
     
     @Test("didFetchUsers should update viewState with users")
-    func didFetchUsersUpdatesViewState() throws {
+    func didFetchUsersUpdatesViewState() async throws {
         // GIVEN
         let mockInteractor = MockPostsInteractor()
         let mockRouter = MockPostsRouter()
@@ -147,7 +149,7 @@ struct PostsPresenterTests {
         ]
         
         // WHEN
-        sut.didFetchUsers(users)
+        await sut.didFetchUsers(users)
         
         // THEN
         try #expect(mockViewState.updateUsersCalled)
@@ -170,7 +172,7 @@ struct PostsPresenterTests {
         let post = Post(text: "New post", author: user)
         
         // WHEN
-        sut.didCreatePost(post)
+        await sut.didCreatePost(post)
         
         // THEN - First check if postCreated was called
         try #expect(mockViewState.postCreatedCalled)
@@ -185,7 +187,7 @@ struct PostsPresenterTests {
     }
     
     @Test("onError should show error in viewState")
-    func onErrorShowsErrorInViewState() throws {
+    func onErrorShowsErrorInViewState() async throws {
         // GIVEN
         let mockInteractor = MockPostsInteractor()
         let mockRouter = MockPostsRouter()
@@ -195,16 +197,35 @@ struct PostsPresenterTests {
         sut.viewState = mockViewState
         
         // WHEN
-        sut.onError(message: "Test error")
+        await sut.onError(message: "Test error")
         
         // THEN
         try #expect(mockViewState.showErrorCalled)
         try #expect(mockViewState.errorMessage == "Test error")
     }
+    
+    @Test("fetchPosts should update isLoading state")
+    func fetchPostsUpdatesLoadingState() async throws {
+        // GIVEN
+        let mockInteractor = MockPostsInteractor()
+        let mockRouter = MockPostsRouter()
+        let mockViewState = MockPostsViewState()
+        
+        let sut = PostsPresenter(interactor: mockInteractor, router: mockRouter)
+        sut.viewState = mockViewState
+        
+        // WHEN
+        await sut.fetchPosts()
+        
+        // THEN
+        try #expect(mockViewState.isLoading)
+        try #expect(mockInteractor.fetchPostsCalled)
+    }
 }
 
 // MARK: - Test Doubles
 
+@MainActor
 final class MockPostsInteractor: PostsInteractorInputProtocol {
     var fetchPostsCalled = false
     var fetchUsersCalled = false
@@ -243,15 +264,17 @@ final class MockPostsInteractor: PostsInteractorInputProtocol {
     }
 }
 
+@MainActor
 final class MockPostsRouter: PostsRouter {
     var makeCreatePostViewCalled = false
     
-    override func makeCreatePostView() -> AnyView {
+    override func makeCreatePostView() -> SwiftUI.AnyView {
         makeCreatePostViewCalled = true
         return super.makeCreatePostView()
     }
 }
 
+@MainActor
 final class MockPostsViewState: PostsPresenterOutputProtocol {
     var isLoading: Bool = false
     
@@ -272,6 +295,9 @@ final class MockPostsViewState: PostsPresenterOutputProtocol {
     var toastType: ToastMessage.ToastType?
     
     var postCreatedCalled = false
+    
+    var didFetchUsersCalled = false
+    var didFetchUsersList: [User] = []
     
     func updatePosts(_ posts: [Post]) {
         updatePostsCalled = true
@@ -301,5 +327,24 @@ final class MockPostsViewState: PostsPresenterOutputProtocol {
     
     func postCreated() {
         postCreatedCalled = true
+    }
+    
+    func didFetchPosts(_ posts: [Post]) {
+        updatePostsCalled = true
+        posts = posts
+    }
+    
+    func didCreatePost(_ post: Post) {
+        postCreatedCalled = true
+    }
+    
+    func didSelectUser(_ userId: UUID) {
+        updateSelectedUserCalled = true
+        selectedUserId = userId
+    }
+    
+    func onError(message: String) {
+        showErrorCalled = true
+        errorMessage = message
     }
 }
