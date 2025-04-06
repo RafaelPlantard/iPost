@@ -10,10 +10,10 @@ import SwiftData
 
 @Model
 final class Post {
-    var id: UUID
-    var text: String
+    var id: UUID = UUID()
+    var text: String = ""
     var imageName: String?
-    var timestamp: Date
+    var timestamp: Date = Date()
     var author: User?
     
     init(id: UUID = UUID(), text: String, imageName: String? = nil, timestamp: Date = Date(), author: User? = nil) {

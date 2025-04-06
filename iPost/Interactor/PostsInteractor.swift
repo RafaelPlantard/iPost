@@ -107,7 +107,7 @@ final class PostsInteractor: PostsInteractorInputProtocol, @unchecked Sendable {
 
         // Create post with current timestamp
         let post = Post(text: text, imageName: imageName, author: user)
-        user.posts.append(post) // Ensure the post is linked to the user
+        user.posts?.append(post) // Ensure the post is linked to the user
         modelContext.insert(post)
         print("DEBUG: PostsInteractor.createPost - Created post with ID: \(post.id)")
 
