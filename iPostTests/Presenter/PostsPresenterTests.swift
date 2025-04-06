@@ -65,7 +65,8 @@ struct PostsPresenterTests {
         sut.viewState = mockViewState
         
         let userId = UUID()
-        sut.selectedUserId = userId
+        // We need to use selectUser to set the selectedUserId since it's private(set)
+        await sut.selectUser(id: userId)
         
         // WHEN
         await sut.createPost(text: "Test post", imageName: "image.name")
@@ -74,14 +75,14 @@ struct PostsPresenterTests {
         try await Task.sleep(for: .milliseconds(200))
         
         // THEN
-        try #expect(mockViewState.showToastCalled)
-        try #expect(mockViewState.toastMessage == "Creating post...")
-        try #expect(mockViewState.toastType == .info)
+        #expect(mockViewState.showToastCalled)
+        #expect(mockViewState.toastMessage == "Creating post...")
+        #expect(mockViewState.toastType == .info)
         
-        try #expect(mockInteractor.createPostCalled)
-        try #expect(mockInteractor.createPostText == "Test post")
-        try #expect(mockInteractor.createPostImageName == "image.name")
-        try #expect(mockInteractor.createPostUserId == userId)
+        #expect(mockInteractor.createPostCalled)
+        #expect(mockInteractor.createPostText == "Test post")
+        #expect(mockInteractor.createPostImageName == "image.name")
+        #expect(mockInteractor.createPostUserId == userId)
     }
     
     @Test("selectUser should update selectedUserId and notify viewState")
@@ -197,7 +198,7 @@ struct PostsPresenterTests {
         sut.viewState = mockViewState
         
         // WHEN
-        await sut.onError(message: "Test error")
+        sut.onError(message: "Test error")
         
         // THEN
         #expect(mockViewState.showErrorCalled)
@@ -260,11 +261,15 @@ final class MockPostsInteractor: PostsInteractorInputProtocol {
         }
     }
     
-    nonisolated func getSelectedUserId() -> UUID? {
+    nonisolated func getSelectedUserId() async -> UUID? {
         Task { @MainActor in
             getSelectedUserIdCalled = true
         }
-        return mockSelectedUserId
+        // Create a local copy to avoid accessing actor-isolated property from nonisolated context
+        let localCopy: UUID? = await Task.detached { @MainActor [weak self] in
+            return self?.mockSelectedUserId
+        }.value
+        return localCopy
     }
 }
 
