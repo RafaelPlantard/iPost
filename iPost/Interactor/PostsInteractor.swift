@@ -9,7 +9,6 @@ import Foundation
 import SwiftData
 
 // PostsInteractorInputProtocol: Protocol that defines the methods the presenter can call on the interactor
-@MainActor
 protocol PostsInteractorInputProtocol {
     func fetchPosts() async
     func createPost(text: String, imageName: String?, forUser userId: UUID) async
@@ -29,8 +28,8 @@ protocol PostsInteractorOutputProtocol: AnyObject {
 }
 
 // MARK: - PostsInteractor
-@MainActor
 final class PostsInteractor: PostsInteractorInputProtocol {
+    @MainActor
     weak var presenter: PostsInteractorOutputProtocol?
     private var modelContext: ModelContext
     private let userPreferencesInteractor: UserPreferencesInteractorInputProtocol
@@ -40,6 +39,7 @@ final class PostsInteractor: PostsInteractorInputProtocol {
         self.userPreferencesInteractor = userPreferencesInteractor
     }
     
+    @MainActor
     private func fetchUser(withId id: UUID) -> User? {
         let descriptor = FetchDescriptor<User>(
             predicate: #Predicate { user in
@@ -64,6 +64,7 @@ final class PostsInteractor: PostsInteractorInputProtocol {
         return userPreferencesInteractor.getSelectedUserId()
     }
     
+    @MainActor
     func fetchPosts() async {
         do {
             // Clear any existing fetch cache to ensure fresh results
@@ -87,6 +88,7 @@ final class PostsInteractor: PostsInteractorInputProtocol {
         }
     }
     
+    @MainActor
     func createPost(text: String, imageName: String?, forUser userId: UUID) async {
         guard let user = fetchUser(withId: userId) else {
             presenter?.onError(message: "User not found")
@@ -116,6 +118,7 @@ final class PostsInteractor: PostsInteractorInputProtocol {
         }
     }
     
+    @MainActor
     func fetchUsers() async {
         do {
             let descriptor = FetchDescriptor<User>()
@@ -145,6 +148,7 @@ final class PostsInteractor: PostsInteractorInputProtocol {
         }
     }
     
+    @MainActor
     private func setupDummyUsers() async {
         // Create sample users
         let users = [

@@ -97,12 +97,12 @@ struct PostsInteractorTests {
         try await Task.sleep(for: .milliseconds(100))
         
         // THEN
-        try #expect(mockPresenter.didFetchPostsCalled)
-        try #expect(mockPresenter.didFetchPostsList.count > 0)
-        try #expect(mockPresenter.didFetchPostsList.contains(where: { $0.id == newPost.id }))
-        try #expect(mockPresenter.didFetchPostsList.contains(where: { $0.id == oldPost.id }))
-        try #expect(mockPresenter.didFetchPostsList.first?.text == "New post")
-        try #expect(mockPresenter.didFetchPostsList.last?.text == "Old post")
+        #expect(mockPresenter.didFetchPostsCalled)
+        #expect(mockPresenter.didFetchPostsList.count > 0)
+        #expect(mockPresenter.didFetchPostsList.contains(where: { $0.id == newPost.id }))
+        #expect(mockPresenter.didFetchPostsList.contains(where: { $0.id == oldPost.id }))
+        #expect(mockPresenter.didFetchPostsList.first?.text == "New post")
+        #expect(mockPresenter.didFetchPostsList.last?.text == "Old post")
     }
     
     @Test("Create post should add post to database and notify presenter")
@@ -129,10 +129,10 @@ struct PostsInteractorTests {
         try await Task.sleep(for: .milliseconds(100))
         
         // THEN
-        try #expect(mockPresenter.didCreatePostCalled)
-        try #expect(mockPresenter.didCreatePostParam?.text == "Test post content")
-        try #expect(mockPresenter.didCreatePostParam?.imageName == "star.fill")
-        try #expect(mockPresenter.didCreatePostParam?.author?.id == user.id)
+        #expect(mockPresenter.didCreatePostCalled)
+        #expect(mockPresenter.didCreatePostParam?.text == "Test post content")
+        #expect(mockPresenter.didCreatePostParam?.imageName == "star.fill")
+        #expect(mockPresenter.didCreatePostParam?.author?.id == user.id)
         
         // Also verify it's in the database
         let descriptor = FetchDescriptor<Post>()
@@ -178,7 +178,7 @@ struct PostsInteractorTests {
         )
         
         // WHEN
-        let result = await sut.getSelectedUserId()
+        let result = sut.getSelectedUserId()
         
         // THEN
         #expect(result == userId)
@@ -238,7 +238,6 @@ final class MockPostsInteractorOutput: PostsInteractorOutputProtocol {
     }
 }
 
-@MainActor
 final class MockUserPreferencesInteractor: UserPreferencesInteractorInputProtocol {
     var savedUserId: UUID?
     
