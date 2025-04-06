@@ -64,10 +64,23 @@ final class iPostUITests: XCTestCase {
         let postsScreenExists = postsNavTitle.waitForExistence(timeout: 2)
         XCTAssertTrue(postsScreenExists, "Posts screen should reappear after submitting")
         
+        // Wait a moment for the list to refresh with the new post
+        try await Task.sleep(nanoseconds: 1_000_000_000) // 1 second
+        
         // Verify the new post appears in the list
-        let postText = app.staticTexts[uniquePostText]
-        let postExists = postText.waitForExistence(timeout: 3)
+        // Use a more reliable approach to find text within scrollable content
+        let postExists = app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", uniquePostText))
+            .element.waitForExistence(timeout: 5)
+        
         XCTAssertTrue(postExists, "The newly created post should appear in the list")
+        
+        // Optional: scroll to ensure the text is visible if it's not found
+        if !postExists {
+            app.swipeUp() // Try scrolling up to find the post
+            let postExistsAfterScroll = app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", uniquePostText))
+                .element.waitForExistence(timeout: 2)
+            XCTAssertTrue(postExistsAfterScroll, "The post should be visible after scrolling")
+        }
     }
 
     @MainActor

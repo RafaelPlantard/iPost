@@ -102,6 +102,7 @@ final class PostsInteractor: PostsInteractorInputProtocol {
         
         // Create post with current timestamp
         let post = Post(text: text, imageName: imageName, author: user)
+        user.posts.append(post) // Ensure the post is linked to the user
         modelContext.insert(post)
         
         do {
@@ -111,12 +112,11 @@ final class PostsInteractor: PostsInteractorInputProtocol {
             // Process pending changes to ensure data consistency
             modelContext.processPendingChanges()
             
-            // First notify the presenter that post was created successfully
-            // This allows the UI to update immediately with the new post
+            // Notify the presenter that post was created successfully
             presenter?.didCreatePost(post)
             
-            // After a short delay, refresh posts to ensure everything is in sync
-            try? await Task.sleep(for: .milliseconds(200))
+            // Immediately fetch posts with no delay
+            // This ensures the UI is updated with the new post right away
             await fetchPosts()
         } catch {
             presenter?.onError(message: "Failed to create post: \(error.localizedDescription)")

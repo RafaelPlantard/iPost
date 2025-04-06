@@ -95,11 +95,15 @@ final class PostsViewState: ObservableObject, PostsPresenterOutputProtocol {
         // Show loading spinner while refreshing
         isLoading = true
         
-        // Trigger a UI update by asking presenter to reload posts
-        // We do this after a short delay to ensure the sheet has time to dismiss
+        // Immediately fetch posts with no delay
+        // This ensures the UI is updated with the latest posts right away
         Task {
-            try? await Task.sleep(for: .milliseconds(200))
+            // No need for artificial delay as we're just waiting for the view to update
             await presenter?.fetchPosts()
+            
+            // This explicit call to objectWillChange ensures the UI rebuilds
+            // even if SwiftUI doesn't detect the changes automatically
+            objectWillChange.send()
         }
     }
 }
