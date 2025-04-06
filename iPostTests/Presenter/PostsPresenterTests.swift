@@ -265,12 +265,12 @@ final class MockPostsInteractor: PostsInteractorInputProtocol {
 }
 
 @MainActor
-final class MockPostsRouter: PostsRouter {
+final class MockPostsRouter: PostsRouterProtocol {
     var makeCreatePostViewCalled = false
     
-    override func makeCreatePostView() -> SwiftUI.AnyView {
+    func makeCreatePostView() -> SwiftUI.AnyView {
         makeCreatePostViewCalled = true
-        return super.makeCreatePostView()
+        return SwiftUI.AnyView(Text("Mock Create Post View"))
     }
 }
 
