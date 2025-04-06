@@ -7,7 +7,7 @@
 
 import Foundation
 import SwiftUI
-@testable import iPost
+@testable import iPosts
 
 @MainActor
 final class MockPostsInteractor: PostsInteractorInputProtocol {

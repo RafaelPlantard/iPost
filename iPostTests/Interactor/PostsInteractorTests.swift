@@ -8,7 +8,7 @@
 import Foundation
 import Testing
 import SwiftData
-@testable import iPost
+@testable import iPosts
 
 @MainActor
 @Suite("PostsInteractor Tests")

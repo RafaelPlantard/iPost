@@ -8,7 +8,7 @@
 import Foundation
 import SwiftUI
 import Combine
-@testable import iPost
+@testable import iPosts
 
 // Instead of subclassing, which won't work with final classes,
 // we create a protocol for testable state management

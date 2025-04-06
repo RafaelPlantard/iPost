@@ -9,7 +9,7 @@ import Foundation
 import SwiftUI
 import SwiftData
 import Testing
-@testable import iPost
+@testable import iPosts
 
 @MainActor
 @Suite("PostsPresenter Tests")

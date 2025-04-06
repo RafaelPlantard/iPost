@@ -7,7 +7,7 @@
 
 import Foundation
 import SwiftUI
-@testable import iPost
+@testable import iPosts
 
 /// A mock implementation of the PostsPresenterInputProtocol for testing.
 /// This class provides controlled behavior and state tracking for tests.

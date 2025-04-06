@@ -8,7 +8,7 @@
 import XCTest
 import SwiftUI
 import SnapshotTesting
-@testable import iPost
+@testable import iPosts
 
 @MainActor
 final class ToastViewSnapshotTests: XCTestCase {

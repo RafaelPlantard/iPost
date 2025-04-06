@@ -9,7 +9,7 @@ import XCTest
 import SwiftUI
 import SwiftData
 import SnapshotTesting
-@testable import iPost
+@testable import iPosts
 
 @MainActor
 final class PostRowViewSnapshotTests: XCTestCase {

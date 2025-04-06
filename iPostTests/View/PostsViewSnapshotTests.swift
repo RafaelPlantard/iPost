@@ -9,7 +9,7 @@ import XCTest
 import SwiftUI
 import SwiftData
 import SnapshotTesting
-@testable import iPost
+@testable import iPosts
 
 /// Documentation for PostsViewSnapshotTests class.
 /// This file contains snapshot tests for the PostsView component.
