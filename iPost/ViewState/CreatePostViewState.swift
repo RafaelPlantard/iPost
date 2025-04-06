@@ -104,6 +104,11 @@ final class CreatePostViewState: ObservableObject, PostsPresenterOutputProtocol 
         }
     }
     
+    func updateSelectedUser(id: UUID?) {
+        self.selectedUserId = id
+        self.selectedUser = users.first(where: { $0.id == id })
+    }
+    
     func showError(message: String) {
         // Could be enhanced to show an error overlay or alert
     }
@@ -120,11 +125,6 @@ final class CreatePostViewState: ObservableObject, PostsPresenterOutputProtocol 
     }
     
     // MARK: - State updates
-    
-    func updateSelectedUser(id: UUID?) {
-        selectedUserId = id
-        selectedUser = users.first(where: { $0.id == id })
-    }
     
     private func clearForm() {
         postText = ""

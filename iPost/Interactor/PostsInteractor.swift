@@ -9,6 +9,7 @@ import Foundation
 import SwiftData
 
 // PostsInteractorInputProtocol: Protocol that defines the methods the presenter can call on the interactor
+@MainActor
 protocol PostsInteractorInputProtocol {
     func fetchPosts() async
     func createPost(text: String, imageName: String?, forUser userId: UUID) async
