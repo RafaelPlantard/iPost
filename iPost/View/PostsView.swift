@@ -295,6 +295,7 @@ struct PostsView: View {
 // MARK: - PostRowView
 struct PostRowView: View {
     let post: Post
+    @State private var isAnimated = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -309,6 +310,7 @@ struct PostRowView: View {
                             endPoint: .bottomTrailing
                         ))
                         .frame(width: 50, height: 50)
+                        .shadow(color: .blue.opacity(0.3), radius: 3, x: 0, y: 2)
 
                     Image(systemName: post.author?.profileImageName ?? "person.circle")
                         .font(.title2)
@@ -352,51 +354,74 @@ struct PostRowView: View {
                     RoundedRectangle(cornerRadius: 12)
                         .fill(Color(.secondarySystemBackground))
 
-                    Image(systemName: imageName)
-                        .resizable()
-                        .aspectRatio(contentMode: .fit)
-                        .padding(8)
-                        .foregroundStyle(
-                            LinearGradient(
-                                colors: [.blue, .cyan],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
+                    // Use a valid SF Symbol and handle potential invalid symbols
+                    if UIImage(systemName: imageName) != nil {
+                        Image(systemName: imageName)
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                            .padding(8)
+                            .foregroundStyle(
+                                LinearGradient(
+                                    colors: [.blue, .cyan],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                )
                             )
-                        )
+                    } else {
+                        // Fallback to a valid image if the specified one doesn't exist
+                        Image(systemName: "photo")
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                            .padding(8)
+                            .foregroundStyle(
+                                LinearGradient(
+                                    colors: [.blue, .cyan],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                )
+                            )
+                    }
                 }
                 .frame(height: 200)
                 .clipShape(RoundedRectangle(cornerRadius: 12))
                 .shadow(color: .black.opacity(0.1), radius: 5, x: 0, y: 2)
+                .scaleEffect(isAnimated ? 1.0 : 0.97)
+                .opacity(isAnimated ? 1.0 : 0.9)
+                .animation(.spring(response: 0.5, dampingFraction: 0.7), value: isAnimated)
+                .onAppear {
+                    isAnimated = true
+                }
             }
 
-            // Interaction buttons
-            HStack(spacing: 20) {
+            // Interaction buttons with improved styling
+            HStack(spacing: 24) {
                 Button(action: {}) {
                     Label("Like", systemImage: "heart")
-                        .font(.caption)
+                        .font(.subheadline)
                         .foregroundColor(.secondary)
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(InteractionButtonStyle())
 
                 Button(action: {}) {
                     Label("Comment", systemImage: "bubble.right")
-                        .font(.caption)
+                        .font(.subheadline)
                         .foregroundColor(.secondary)
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(InteractionButtonStyle())
 
                 Button(action: {}) {
                     Label("Share", systemImage: "square.and.arrow.up")
-                        .font(.caption)
+                        .font(.subheadline)
                         .foregroundColor(.secondary)
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(InteractionButtonStyle())
 
                 Spacer()
             }
+            .padding(.top, 4)
         }
         .padding(.vertical, 12)
-        .padding(.horizontal, 8)
+        .padding(.horizontal, 12)
         .background(
             RoundedRectangle(cornerRadius: 16)
                 .fill(Color(.systemBackground))

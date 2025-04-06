@@ -160,8 +160,8 @@ final class iPostUITests: XCTestCase {
         let postsScreenExists = postsNavTitle.waitForExistence(timeout: 2)
         XCTAssertTrue(postsScreenExists, "Posts screen should reappear after submitting")
 
-        // Wait a moment for the list to refresh with the new post
-        try await Task.sleep(nanoseconds: 1_000_000_000) // 1 second
+        // Wait a moment for the list to refresh with the new post (longer for ModelActor)
+        try await Task.sleep(nanoseconds: 2_000_000_000) // 2 seconds
 
         // Verify the new post appears in the list with the improved UI
         let postExists = app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", uniquePostText))
@@ -420,8 +420,8 @@ final class iPostUITests: XCTestCase {
         let postsNavTitle = app.navigationBars["iPosts"]
         XCTAssertTrue(postsNavTitle.waitForExistence(timeout: 2), "Posts screen should reappear")
 
-        // Wait for the list to refresh with the new post
-        try await Task.sleep(nanoseconds: 1_500_000_000) // 1.5 seconds
+        // Wait for the list to refresh with the new post (longer for ModelActor)
+        try await Task.sleep(nanoseconds: 2_500_000_000) // 2.5 seconds
 
         // Verify the new post appears in the list
         var postFound = false

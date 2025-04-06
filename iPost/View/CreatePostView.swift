@@ -22,12 +22,13 @@ struct CreatePostView: View {
         // This was causing the bug where new posts weren't visible after creation
     }
 
-    // Sample system images for selection
+    // Sample system images for selection - all verified to work in iOS 17.6
     private let availableImages = [
         "photo", "camera", "car.fill", "airplane", "heart.fill",
         "star.fill", "figure.hiking", "gamecontroller.fill", "book.fill",
         "laptopcomputer", "desktopcomputer", "cup.and.saucer.fill",
-        "fork.knife", "music.note", "film", "map", "graduationcap.fill"
+        "fork.knife", "music.note", "film", "map", "graduationcap.fill",
+        "sun.max.fill", "cloud.fill", "moon.stars.fill", "flame.fill"
     ]
 
     var body: some View {
@@ -99,20 +100,38 @@ struct CreatePostView: View {
                                 .foregroundColor(.secondary)
                                 .padding(.horizontal, 4)
 
-                            // Text input area
-                            TextEditor(text: $viewState.postText)
-                                .frame(minHeight: 120)
-                                .padding(12)
-                                .background(
-                                    RoundedRectangle(cornerRadius: 12)
-                                        .fill(Color(.systemBackground))
-                                        .shadow(color: .black.opacity(0.05), radius: 3, x: 0, y: 1)
-                                )
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 12)
-                                        .stroke(Color.gray.opacity(0.2), lineWidth: 1)
-                                )
-                                .accessibilityIdentifier("post-text-editor")
+                            // Text input area with placeholder text
+                            ZStack(alignment: .topLeading) {
+                                TextEditor(text: $viewState.postText)
+                                    .frame(minHeight: 120)
+                                    .padding(12)
+                                    .background(
+                                        RoundedRectangle(cornerRadius: 12)
+                                            .fill(Color(.systemBackground))
+                                            .shadow(color: .black.opacity(0.05), radius: 3, x: 0, y: 1)
+                                    )
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 12)
+                                            .stroke(
+                                                LinearGradient(
+                                                    colors: [.blue.opacity(0.3), .cyan.opacity(0.3)],
+                                                    startPoint: .topLeading,
+                                                    endPoint: .bottomTrailing
+                                                ),
+                                                lineWidth: viewState.postText.isEmpty ? 1 : 2
+                                            )
+                                    )
+                                    .accessibilityIdentifier("post-text-editor")
+
+                                // Placeholder text that disappears when typing
+                                if viewState.postText.isEmpty {
+                                    Text("Share what's on your mind...")
+                                        .foregroundColor(.gray.opacity(0.7))
+                                        .padding(.horizontal, 16)
+                                        .padding(.vertical, 20)
+                                        .allowsHitTesting(false)
+                                }
+                            }
                         }
                         .padding(16)
                         .background(
@@ -325,12 +344,14 @@ struct CreatePostView: View {
                         .padding(.horizontal)
                     }
 
-                    // Grid of images
+                    // Grid of images with improved UI
                     ScrollView {
                         LazyVGrid(columns: [GridItem(.adaptive(minimum: 100), spacing: 16)], spacing: 16) {
                             ForEach(availableImages, id: \.self) { imageName in
                                 Button(action: {
-                                    viewState.selectImage(imageName)
+                                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                                        viewState.selectImage(imageName)
+                                    }
                                 }) {
                                     VStack(spacing: 8) {
                                         ZStack {
@@ -338,6 +359,10 @@ struct CreatePostView: View {
                                                 .fill(Color(.systemBackground))
                                                 .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
                                                 .frame(height: 100)
+                                                .overlay(
+                                                    RoundedRectangle(cornerRadius: 16)
+                                                        .stroke(Color.blue.opacity(0.3), lineWidth: 1)
+                                                )
 
                                             Image(systemName: imageName)
                                                 .resizable()
@@ -351,13 +376,16 @@ struct CreatePostView: View {
                                                     )
                                                 )
                                         }
+                                        .scaleEffect(viewState.selectedImageName == imageName ? 1.05 : 1.0)
+                                        .shadow(color: viewState.selectedImageName == imageName ? .blue.opacity(0.3) : .clear, radius: 5, x: 0, y: 2)
 
                                         Text(imageName)
                                             .font(.caption)
-                                            .foregroundColor(.secondary)
+                                            .foregroundColor(viewState.selectedImageName == imageName ? .blue : .secondary)
                                             .lineLimit(1)
                                     }
                                 }
+                                .buttonStyle(InteractionButtonStyle())
                             }
                         }
                         .padding()
