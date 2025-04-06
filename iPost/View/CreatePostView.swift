@@ -9,7 +9,14 @@ import SwiftUI
 
 struct CreatePostView: View {
     @Environment(\.dismiss) private var dismiss
-    @ObservedObject var presenter: PostsPresenter
+    var presenter: PostsPresenterInputProtocol
+    @ObservedObject private var stateManager = ViewStateManager()
+    
+    class ViewStateManager: ObservableObject {
+        @Published var selectedUser: User? = nil
+        @Published var users: [User] = []
+        @Published var selectedUserId: UUID? = nil
+    }
     
     @State private var postText: String = ""
     @State private var selectedImageName: String?
@@ -64,16 +71,15 @@ struct CreatePostView: View {
                 
                 // User information
                 Section("Posting as") {
-                    let currentUser = presenter.users.first(where: { $0.id == presenter.selectedUserId })
                     HStack {
-                        Image(systemName: currentUser?.profileImageName ?? "person.circle")
+                        Image(systemName: stateManager.selectedUser?.profileImageName ?? "person.circle")
                             .font(.title2)
                             .foregroundColor(.blue)
                         
                         VStack(alignment: .leading) {
-                            Text(currentUser?.name ?? "Select a user")
+                            Text(stateManager.selectedUser?.name ?? "Select a user")
                                 .font(.headline)
-                            if let username = currentUser?.username {
+                            if let username = stateManager.selectedUser?.username {
                                 Text(username)
                                     .font(.subheadline)
                                     .foregroundColor(.gray)
@@ -84,6 +90,12 @@ struct CreatePostView: View {
             }
             .navigationTitle("Create Post")
             .navigationBarTitleDisplayMode(.inline)
+            .onAppear {
+                // Initialize the state manager with data from the presenter
+                stateManager.users = presenter.users
+                stateManager.selectedUserId = presenter.selectedUserId
+                stateManager.selectedUser = presenter.users.first(where: { $0.id == presenter.selectedUserId })
+            }
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button("Cancel") {
@@ -95,7 +107,7 @@ struct CreatePostView: View {
                     Button("Post") {
                         createPost()
                     }
-                    .disabled(postText.isEmpty || presenter.selectedUserId == nil)
+                    .disabled(postText.isEmpty || stateManager.selectedUserId == nil)
                     .bold()
                 }
             }

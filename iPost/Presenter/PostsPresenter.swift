@@ -9,24 +9,6 @@ import Foundation
 import SwiftData
 import Combine
 
-// PostsPresenterInputProtocol: Protocol that defines the methods the view can call on the presenter
-protocol PostsPresenterInputProtocol: AnyObject {
-    func viewDidLoad()
-    func createPost(text: String, imageName: String?)
-    func selectUser(id: UUID)
-    var selectedUserId: UUID? { get }
-    var users: [User] { get }
-    var posts: [Post] { get }
-}
-
-// PostsPresenterOutputProtocol: Protocol that defines the methods the presenter can call on the view
-protocol PostsPresenterOutputProtocol {
-    func showPosts(_ posts: [Post])
-    func showUsers(_ users: [User])
-    func showError(message: String)
-    func postCreated()
-}
-
 // MARK: - PostsPresenter
 final class PostsPresenter: ObservableObject {
     var view: PostsPresenterOutputProtocol?
@@ -61,6 +43,8 @@ extension PostsPresenter: PostsPresenterInputProtocol {
     
     func selectUser(id: UUID) {
         selectedUserId = id
+        // Notify the view of the user change
+        view?.selectedUserChanged(id: id)
         // When a user is selected, we might want to refresh the feed
         interactor.fetchPosts()
     }

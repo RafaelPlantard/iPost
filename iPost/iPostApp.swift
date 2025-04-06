@@ -10,24 +10,34 @@ import SwiftData
 
 @main
 struct iPostApp: App {
-    var sharedModelContainer: ModelContainer = {
-        let schema = Schema([
-            User.self,
-            Post.self
-        ])
-        let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
-
+    @State private var appError: AppError?
+    @State private var showErrorAlert = false
+    
+    private var sharedModelContainer: ModelContainer? = nil
+    
+    init() {
         do {
-            return try ModelContainer(for: schema, configurations: [modelConfiguration])
+            let schema = Schema([
+                User.self,
+                Post.self
+            ])
+            let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
+            sharedModelContainer = try ModelContainer(for: schema, configurations: [modelConfiguration])
         } catch {
-            fatalError("Could not create ModelContainer: \(error)")
+            appError = .modelContainerCreationFailed(description: error.localizedDescription)
         }
-    }()
+    }
 
     var body: some Scene {
         WindowGroup {
-            MainView()
-                .modelContainer(sharedModelContainer)
+            ZStack {
+                if let container = sharedModelContainer {
+                    MainView()
+                        .modelContainer(container)
+                } else {
+                    ErrorRouter.createModule(error: appError ?? .unknown(description: "Unknown error"))
+                }
+            }
         }
     }
 }
