@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import SwiftData
 
 struct PostsView: View {
     @ObservedObject var presenter: PostsPresenter!
@@ -181,5 +182,5 @@ extension PostsView: PostsPresenterOutputProtocol {
     interactor.presenter = presenter
     view.presenter = presenter
     
-    return view
+    view
 }

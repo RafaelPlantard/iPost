@@ -9,7 +9,7 @@ import Foundation
 import SwiftData
 
 // PostsPresenterInputProtocol: Protocol that defines the methods the view can call on the presenter
-protocol PostsPresenterInputProtocol {
+protocol PostsPresenterInputProtocol: AnyObject {
     func viewDidLoad()
     func createPost(text: String, imageName: String?)
     func selectUser(id: UUID)

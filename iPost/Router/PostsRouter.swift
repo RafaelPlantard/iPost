@@ -5,17 +5,11 @@
 //  Created on 06/04/25.
 //
 
-import Foundation
 import SwiftUI
 import SwiftData
 
-// PostsRouterProtocol: Protocol that defines the methods for navigating between views
-protocol PostsRouterProtocol {
-    func makeCreatePostView() -> AnyView
-}
-
 // MARK: - PostsRouter
-class PostsRouter {
+final class PostsRouter {
     private weak var presenter: PostsPresenterInputProtocol?
     
     init(presenter: PostsPresenterInputProtocol? = nil) {
