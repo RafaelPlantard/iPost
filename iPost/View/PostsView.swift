@@ -9,7 +9,7 @@ import SwiftUI
 import SwiftData
 
 struct PostsView: View {
-    @ObservedObject var presenter: PostsPresenter!
+    @ObservedObject var presenter: PostsPresenter
     @State private var showCreatePostSheet = false
     @State private var posts: [Post] = []
     @State private var users: [User] = []

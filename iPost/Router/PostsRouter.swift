@@ -9,7 +9,7 @@ import SwiftUI
 import SwiftData
 
 // MARK: - PostsRouter
-final class PostsRouter {
+final class PostsRouter: PostsRouterProtocol {
     private weak var presenter: PostsPresenterInputProtocol?
     
     init(presenter: PostsPresenterInputProtocol? = nil) {

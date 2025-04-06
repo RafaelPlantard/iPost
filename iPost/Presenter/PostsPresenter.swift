@@ -7,6 +7,7 @@
 
 import Foundation
 import SwiftData
+import Combine
 
 // PostsPresenterInputProtocol: Protocol that defines the methods the view can call on the presenter
 protocol PostsPresenterInputProtocol: AnyObject {
@@ -27,17 +28,17 @@ protocol PostsPresenterOutputProtocol: AnyObject {
 }
 
 // MARK: - PostsPresenter
-class PostsPresenter {
+final class PostsPresenter: ObservableObject {
     private weak var view: PostsPresenterOutputProtocol?
     private let interactor: PostsInteractorInputProtocol
-    private let router: PostsRouterProtocol
+    private let router: PostsRouter
     
     // View state
-    private(set) var users: [User] = []
-    private(set) var posts: [Post] = []
-    private(set) var selectedUserId: UUID?
+    @Published private(set) var users: [User] = []
+    @Published private(set) var posts: [Post] = []
+    @Published private(set) var selectedUserId: UUID?
     
-    init(view: PostsPresenterOutputProtocol, interactor: PostsInteractorInputProtocol, router: PostsRouterProtocol) {
+    init(view: PostsPresenterOutputProtocol, interactor: PostsInteractorInputProtocol, router: PostsRouter) {
         self.view = view
         self.interactor = interactor
         self.router = router
