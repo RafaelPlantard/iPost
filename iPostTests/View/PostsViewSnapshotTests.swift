@@ -11,89 +11,16 @@ import SwiftData
 import SnapshotTesting
 @testable import iPost
 
-// MARK: - Test Doubles 
-
-@MainActor
-final class MockPostsInteractor: PostsInteractorInputProtocol {
-    weak var presenter: PostsInteractorOutputProtocol?
-    
-    func fetchPosts() async {
-        // Do nothing in test
-    }
-    
-    func createPost(text: String, imageName: String?, forUser userId: UUID) async {
-        // Do nothing in test
-    }
-    
-    func fetchUsers() async {
-        // Do nothing in test
-    }
-    
-    func saveSelectedUserId(_ userId: UUID?) {
-        // Do nothing in test
-    }
-    
-    func getSelectedUserId() -> UUID? {
-        return nil
-    }
-}
-
-@MainActor
-final class MockPostsRouter: PostsRouterProtocol {
-    weak var presenter: PostsPresenterInputProtocol?
-    
-    // Add any router methods if needed
-}
-
-@MainActor
-final class TestablePostsViewState: PostsViewState {
-    // Allow test-specific manipulation of state
-    override init(presenter: PostsPresenterInputProtocol) {
-        super.init(presenter: presenter)
-    }
-    
-    // Helper to set posts directly for testing
-    func setPosts(_ newPosts: [Post]) {
-        posts = newPosts
-        objectWillChange.send()
-    }
-    
-    // Helper to set users directly for testing
-    func setUsers(_ newUsers: [User]) {
-        users = newUsers
-        objectWillChange.send()
-    }
-    
-    // Helper to set loading state
-    func setLoading(_ loading: Bool) {
-        isLoading = loading
-        objectWillChange.send()
-    }
-}
-
-// A testable wrapper that uses our custom view state
-struct TestablePostsView: View {
-    @ObservedObject var viewState: TestablePostsViewState
-    private var presenter: PostsPresenterInputProtocol
-    
-    init(presenter: PostsPresenterInputProtocol, viewState: TestablePostsViewState) {
-        self.presenter = presenter
-        self.viewState = viewState
-    }
-    
-    var body: some View {
-        PostsView(presenter: presenter)
-            .environmentObject(viewState)
-    }
-}
+/// Documentation for PostsViewSnapshotTests class.
+/// This file contains snapshot tests for the PostsView component.
 
 @MainActor
 final class PostsViewSnapshotTests: XCTestCase {
     // Test components
     private var mockInteractor: MockPostsInteractor!
     private var mockRouter: MockPostsRouter!
-    private var presenter: PostsPresenter!
-    private var viewState: TestablePostsViewState!
+    private var mockPresenter: MockPostsPresenter!
+    private var viewStateController: PostsViewStateController!
     
     // Test data
     private var testUser: User!
@@ -106,17 +33,19 @@ final class PostsViewSnapshotTests: XCTestCase {
         // Set up test doubles
         mockInteractor = MockPostsInteractor()
         mockRouter = MockPostsRouter()
-        presenter = PostsPresenter(interactor: mockInteractor, router: mockRouter)
+        mockPresenter = MockPostsPresenter()
         
-        // Connect components
-        mockInteractor.presenter = presenter
-        mockRouter.presenter = presenter
+        // Connect components 
+        mockRouter.presenter = mockPresenter
         
-        // Create our testable view state
-        viewState = TestablePostsViewState(presenter: presenter)
+        // Create view state controller
+        viewStateController = PostsViewStateController(with: mockPresenter)
         
         // Initialize test data
         createTestData()
+        
+        // Set isRecording = true when creating new snapshots
+        // isRecording = true
     }
     
     private func createTestData() {
@@ -134,8 +63,8 @@ final class PostsViewSnapshotTests: XCTestCase {
     override func tearDownWithError() throws {
         mockInteractor = nil
         mockRouter = nil
-        presenter = nil
-        viewState = nil
+        mockPresenter = nil
+        viewStateController = nil
         testUser = nil
         testPosts = nil
         try super.tearDownWithError()
@@ -143,58 +72,82 @@ final class PostsViewSnapshotTests: XCTestCase {
     
     // MARK: - Snapshot Tests
     
+    /// Tests the posts view in an empty state (no posts).
     @MainActor
     func testPostsViewEmpty() async throws {
-        // Set up empty state with just a user
-        viewState.setUsers([testUser])
-        viewState.setPosts([])
+        // Prepare mock presenter with test data
+        mockPresenter.users = [testUser]
+        mockPresenter.posts = []
         
-        // Create our testable view
-        let view = TestablePostsView(presenter: presenter, viewState: viewState)
+        // Set up view state through controller
+        viewStateController.setUsers([testUser])
+        viewStateController.setPosts([])
+        
+        // Connect view state to presenter
+        mockPresenter.viewState = viewStateController.viewState
+        
+        // Create actual PostsView with our mock presenter
+        let postsView = PostsView(presenter: mockPresenter)
         
         // Record snapshot
         assertSnapshot(
-            of: UIHostingController(rootView: view),
+            of: UIHostingController(rootView: postsView),
             as: .image(on: .iPhone13, traits: .init(userInterfaceStyle: .light))
         )
     }
     
+    /// Tests the posts view with multiple posts displayed.
     @MainActor
     func testPostsViewWithPosts() async throws {
-        // Set up state with posts
-        viewState.setUsers([testUser])
-        viewState.setPosts(testPosts)
+        // Prepare mock presenter with test data
+        mockPresenter.users = [testUser]
+        mockPresenter.posts = testPosts
         
-        // Create our testable view
-        let view = TestablePostsView(presenter: presenter, viewState: viewState)
+        // Set up view state
+        viewStateController.setUsers([testUser])
+        viewStateController.setPosts(testPosts)
+        
+        // Connect view state to presenter
+        mockPresenter.viewState = viewStateController.viewState
+        
+        // Create actual PostsView
+        let postsView = PostsView(presenter: mockPresenter)
         
         // Record snapshot
         assertSnapshot(
-            of: UIHostingController(rootView: view),
+            of: UIHostingController(rootView: postsView),
             as: .image(on: .iPhone13, traits: .init(userInterfaceStyle: .light))
         )
         
         // Also test dark mode
         assertSnapshot(
-            of: UIHostingController(rootView: view),
+            of: UIHostingController(rootView: postsView),
             as: .image(on: .iPhone13, traits: .init(userInterfaceStyle: .dark)),
             named: "dark_mode"
         )
     }
     
+    /// Tests the posts view in a loading state.
     @MainActor
     func testPostsViewLoading() async throws {
-        // Set up loading state
-        viewState.setUsers([testUser])
-        viewState.setPosts([])
-        viewState.setLoading(true)
+        // Set up presenter with minimal data
+        mockPresenter.users = [testUser]
+        mockPresenter.posts = []
         
-        // Create our testable view
-        let view = TestablePostsView(presenter: presenter, viewState: viewState)
+        // Set up loading state
+        viewStateController.setUsers([testUser])
+        viewStateController.setPosts([])
+        viewStateController.setLoading(true)
+        
+        // Connect view state to presenter
+        mockPresenter.viewState = viewStateController.viewState
+        
+        // Create actual PostsView
+        let postsView = PostsView(presenter: mockPresenter)
         
         // Record snapshot
         assertSnapshot(
-            of: UIHostingController(rootView: view),
+            of: UIHostingController(rootView: postsView),
             as: .image(on: .iPhone13, traits: .init(userInterfaceStyle: .light))
         )
     }
