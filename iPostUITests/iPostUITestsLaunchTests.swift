@@ -45,7 +45,9 @@ final class iPostUITestsLaunchTests: XCTestCase {
         // Look for any menu or picker that might contain user info
         // Since we don't have the exact identifier, we'll try to find UI elements that match
         // a user selector pattern
-        if let userMenu = app.menus.firstMatch, userMenu.exists {
+        let userMenu = app.menus.firstMatch
+
+        if userMenu.exists {
             userMenu.tap()
             
             // Wait for menu to appear

@@ -145,7 +145,6 @@ struct PostsInteractorTests {
     func saveSelectedUserId() async throws {
         // GIVEN
         let testContainer = try TestContainer()
-        let mockPresenter = MockPostsInteractorOutput()
         let mockUserPreferences = MockUserPreferencesInteractor()
         
         let sut = PostsInteractor(
@@ -166,7 +165,6 @@ struct PostsInteractorTests {
     func getSelectedUserId() async throws {
         // GIVEN
         let testContainer = try TestContainer()
-        let mockPresenter = MockPostsInteractorOutput()
         let mockUserPreferences = MockUserPreferencesInteractor()
         
         let userId = UUID()
