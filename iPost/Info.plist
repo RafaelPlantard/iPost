@@ -6,7 +6,7 @@
 	<array>
 		<string>remote-notification</string>
 	</array>
+    <key>ITSAppUsesNonExemptEncryption</key>
+    <false/>
 </dict>
-<key>ITSAppUsesNonExemptEncryption</key>
-<false/>
 </plist>
