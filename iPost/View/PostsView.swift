@@ -98,7 +98,7 @@ struct PostsView: View {
             .onAppear {
                 viewState.loadInitialData()
             }
-            .toast(message: $viewState.toast)
+            .withToasts()
         }
     }
     

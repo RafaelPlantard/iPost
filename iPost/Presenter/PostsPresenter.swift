@@ -10,6 +10,7 @@ import SwiftData
 import Combine
 
 // MARK: - PostsPresenter
+@MainActor
 final class PostsPresenter: ObservableObject {
     weak var viewState: PostsPresenterOutputProtocol?
     private let interactor: PostsInteractorInputProtocol
@@ -29,11 +30,13 @@ final class PostsPresenter: ObservableObject {
 // MARK: - PostsPresenterInputProtocol
 extension PostsPresenter: PostsPresenterInputProtocol {
     func viewDidLoad() {
-        // First fetch users to ensure we have a selected user
-        interactor.fetchUsers()
-        // Then fetch posts with a small delay to ensure the users are processed first
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
-            self?.interactor.fetchPosts()
+        Task {
+            // First fetch users to ensure we have a selected user
+            await interactor.fetchUsers()
+            
+            // Then fetch posts with a small delay to ensure the users are processed first
+            try? await Task.sleep(for: .milliseconds(100))
+            await interactor.fetchPosts()
         }
     }
     
@@ -46,11 +49,10 @@ extension PostsPresenter: PostsPresenterInputProtocol {
         // Show creating toast before dispatching to avoid UI hang
         viewState?.showToast(message: "Creating post...", type: .info)
         
-        // Dispatch the creation to avoid blocking the UI thread
-        // This helps prevent SwiftData-related hangs
-        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+        // Use Swift concurrency to handle the creation
+        Task.detached(priority: .userInitiated) { [weak self] in
             guard let self = self else { return }
-            self.interactor.createPost(text: text, imageName: imageName, forUser: userId)
+            await self.interactor.createPost(text: text, imageName: imageName, forUser: userId)
         }
     }
     
@@ -82,10 +84,8 @@ extension PostsPresenter: PostsInteractorOutputProtocol {
         let updatedPosts = Array(posts)
         self.posts = updatedPosts
         
-        // Ensure view update is on main thread
-        DispatchQueue.main.async { [weak self] in
-            self?.viewState?.updatePosts(updatedPosts)
-        }
+        // Since we're using @MainActor, we're already on the main thread
+        viewState?.updatePosts(updatedPosts)
     }
     
     func didFetchUsers(_ users: [User]) {
@@ -93,15 +93,12 @@ extension PostsPresenter: PostsInteractorOutputProtocol {
         let updatedUsers = Array(users)
         self.users = updatedUsers
         
-        // Ensure view update is on main thread
-        DispatchQueue.main.async { [weak self] in
-            guard let self = self else { return }
-            self.viewState?.updateUsers(updatedUsers)
-            
-            // If no user is selected, select the first one
-            if self.selectedUserId == nil && !updatedUsers.isEmpty {
-                self.selectUser(id: updatedUsers[0].id)
-            }
+        // Since we're using @MainActor, we're already on the main thread
+        viewState?.updateUsers(updatedUsers)
+        
+        // If no user is selected, select the first one
+        if selectedUserId == nil && !updatedUsers.isEmpty {
+            selectUser(id: updatedUsers[0].id)
         }
     }
     
@@ -117,14 +114,13 @@ extension PostsPresenter: PostsInteractorOutputProtocol {
         viewState?.postCreated()
         
         // Show success toast after a small delay to allow the modal to dismiss first
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
-            guard let self = self else { return }
-            self.viewState?.showToast(message: "Post created successfully!", type: .success)
+        Task {
+            try? await Task.sleep(for: .milliseconds(300))
+            viewState?.showToast(message: "Post created successfully!", type: .success)
             
             // After the toast is shown, fetch posts to ensure our list stays in sync
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
-                self?.interactor.fetchPosts()
-            }
+            try? await Task.sleep(for: .milliseconds(500))
+            await interactor.fetchPosts()
         }
     }
     

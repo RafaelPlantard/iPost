@@ -7,12 +7,12 @@
 
 import SwiftUI
 
+/// A container view that shows toasts from the ToastManager
 struct ToastContainerView<Content: View>: View {
-    @Binding var toast: ToastMessage?
+    @StateObject private var toastManager = ToastManager.shared
     let content: Content
     
-    init(toast: Binding<ToastMessage?>, @ViewBuilder content: () -> Content) {
-        self._toast = toast
+    init(@ViewBuilder content: () -> Content) {
         self.content = content()
     }
     
@@ -21,24 +21,24 @@ struct ToastContainerView<Content: View>: View {
             content
             
             VStack {
-                if let activeToast = toast {
-                    ToastView(toast: activeToast) {
-                        toast = nil
-                    }
-                    .transition(.move(edge: .top).combined(with: .opacity))
-                    .zIndex(100)
+                if let activeToast = toastManager.currentToast {
+                    ToastView(toast: activeToast)
+                        .padding(.horizontal)
+                        .padding(.top)
+                        .zIndex(100)
                 }
                 
                 Spacer()
             }
-            .animation(.easeInOut, value: toast != nil)
+            .animation(.spring(), value: toastManager.currentToast)
         }
     }
 }
 
+/// Extension to add toast container to any view
 extension View {
-    func toast(message: Binding<ToastMessage?>) -> some View {
-        ToastContainerView(toast: message) {
+    func withToasts() -> some View {
+        ToastContainerView {
             self
         }
     }

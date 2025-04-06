@@ -7,27 +7,52 @@
 
 import SwiftUI
 
+/// A view that shows a toast notification
+final class ToastManager: ObservableObject {
+    @Published var currentToast: ToastMessage?
+    
+    /// Singleton instance
+    static let shared = ToastManager()
+    
+    private init() {}
+    
+    @MainActor
+    func show(message: String, type: ToastMessage.ToastType, duration: TimeInterval = 3.0) {
+        // Clear any existing toast first
+        currentToast = nil
+        
+        // Slight delay to ensure animation works correctly when showing sequential toasts
+        Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(50))
+            currentToast = ToastMessage(message: message, type: type)
+            
+            // Auto dismiss after duration
+            try? await Task.sleep(for: .seconds(duration))
+            withAnimation {
+                currentToast = nil
+            }
+        }
+    }
+    
+    @MainActor
+    func dismiss() {
+        withAnimation {
+            currentToast = nil
+        }
+    }
+}
+
+/// The actual toast view component
 struct ToastView: View {
-    let message: ToastMessage
-    
-    // Internal animation state
-    @State private var isVisible = false
-    
-    private var iconName: String {
-        message.type.icon
-    }
-    
-    private var backgroundColor: Color {
-        message.type.backgroundColor
-    }
+    let toast: ToastMessage
     
     var body: some View {
         HStack(spacing: 12) {
-            Image(systemName: iconName)
+            Image(systemName: toast.type.icon)
                 .font(.title3)
                 .foregroundColor(.white)
             
-            Text(message.message)
+            Text(toast.message)
                 .font(.subheadline)
                 .foregroundColor(.white)
                 .lineLimit(2)
@@ -35,9 +60,7 @@ struct ToastView: View {
             Spacer()
             
             Button(action: {
-                withAnimation(.easeInOut(duration: 0.3)) {
-                    isVisible = false
-                }
+                ToastManager.shared.dismiss()
             }) {
                 Image(systemName: "xmark.circle.fill")
                     .foregroundColor(.white.opacity(0.7))
@@ -48,53 +71,9 @@ struct ToastView: View {
         .padding(.horizontal, 16)
         .background(
             RoundedRectangle(cornerRadius: 10)
-                .fill(backgroundColor)
+                .fill(toast.type.backgroundColor)
                 .shadow(color: .black.opacity(0.15), radius: 5, x: 0, y: 3)
         )
-        .opacity(isVisible ? 1 : 0)
-        .offset(y: isVisible ? 0 : -20)
-        .onAppear {
-            // Appear with animation
-            withAnimation(.spring(response: 0.3)) {
-                isVisible = true
-            }
-            
-            // Auto dismiss after a delay
-            DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
-                withAnimation(.easeInOut(duration: 0.3)) {
-                    isVisible = false
-                }
-            }
-        }
-    }
-}
-
-// Toast modifier for any view
-struct ToastModifier: ViewModifier {
-    @Binding var toast: ToastMessage?
-    
-    func body(content: Content) -> some View {
-        content
-            .overlay(alignment: .top) {
-                if let toast = toast {
-                    ToastView(message: toast)
-                        .padding(.horizontal)
-                        .padding(.top, 10)
-                        .transition(.move(edge: .top).combined(with: .opacity))
-                        .onAppear {
-                            // Auto dismiss after delay
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
-                                self.toast = nil
-                            }
-                        }
-                        .animation(.spring(), value: toast)
-                }
-            }
-    }
-}
-
-extension View {
-    func toast(message: Binding<ToastMessage?>) -> some View {
-        self.modifier(ToastModifier(toast: message))
+        .transition(.move(edge: .top).combined(with: .opacity))
     }
 }
