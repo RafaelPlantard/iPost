@@ -11,22 +11,21 @@ import SwiftData
 struct PostsView: View {
     @ObservedObject var presenter: PostsPresenter
     @State private var showCreatePostSheet = false
-    @State private var posts: [Post] = []
-    @State private var users: [User] = []
     @State private var errorMessage: String?
     @State private var showingError = false
     
     var body: some View {
         NavigationStack {
             VStack {
-                // User dropdown selector
-                if !users.isEmpty {
+                // User dropdown selector at the top
+                if !presenter.users.isEmpty {
                     userSelectionPicker
+                        .padding(.top)
                 }
                 
                 // Posts list
                 List {
-                    ForEach(posts) { post in
+                    ForEach(presenter.posts) { post in
                         PostRowView(post: post)
                     }
                 }
@@ -62,34 +61,65 @@ struct PostsView: View {
     
     // User selection picker component
     private var userSelectionPicker: some View {
-        Menu {
-            ForEach(users) { user in
-                Button(action: {
-                    presenter.selectUser(id: user.id)
-                }) {
-                    HStack {
-                        Text(user.name)
-                        if presenter.selectedUserId == user.id {
-                            Image(systemName: "checkmark")
+        VStack(alignment: .leading) {
+            Text("POSTING AS")
+                .font(.caption)
+                .foregroundColor(.gray)
+                .padding(.horizontal)
+            
+            Menu {
+                ForEach(presenter.users) { user in
+                    Button(action: {
+                        presenter.selectUser(id: user.id)
+                    }) {
+                        HStack {
+                            Image(systemName: user.profileImageName)
+                                .foregroundColor(.accentColor)
+                            Text(user.name)
+                            Spacer()
+                            Text(user.username)
+                                .foregroundColor(.gray)
+                            if presenter.selectedUserId == user.id {
+                                Image(systemName: "checkmark")
+                                    .foregroundColor(.blue)
+                            }
                         }
                     }
                 }
+            } label: {
+                HStack {
+                    let selectedUser = presenter.users.first(where: { $0.id == presenter.selectedUserId })
+                    
+                    Image(systemName: selectedUser?.profileImageName ?? "person.circle")
+                        .font(.title3)
+                        .foregroundColor(.accentColor)
+                    
+                    VStack(alignment: .leading) {
+                        Text(selectedUser?.name ?? "Select User")
+                            .font(.headline)
+                        Text(selectedUser?.username ?? "")
+                            .font(.subheadline)
+                            .foregroundColor(.gray)
+                    }
+                    
+                    Spacer()
+                    
+                    Image(systemName: "chevron.down")
+                        .font(.caption)
+                        .foregroundColor(.gray)
+                }
+                .padding(.horizontal)
+                .padding(.vertical, 10)
+                .background(Color(UIColor.secondarySystemBackground))
+                .cornerRadius(10)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 10)
+                        .stroke(Color.gray.opacity(0.2), lineWidth: 1)
+                )
             }
-        } label: {
-            HStack {
-                let selectedUser = users.first(where: { $0.id == presenter.selectedUserId })
-                Image(systemName: selectedUser?.profileImageName ?? "person.circle")
-                Text(selectedUser?.name ?? "Select User")
-                    .font(.headline)
-                Image(systemName: "chevron.down")
-                    .font(.caption)
-            }
+            .buttonStyle(PlainButtonStyle())
             .padding(.horizontal)
-            .padding(.vertical, 8)
-            .background(Color.gray.opacity(0.1))
-            .cornerRadius(8)
         }
-        .padding()
     }
 }
 
@@ -142,11 +172,11 @@ struct PostRowView: View {
 // MARK: - PostsPresenterOutputProtocol conformance
 extension PostsView: PostsPresenterOutputProtocol {
     func showPosts(_ posts: [Post]) {
-        self.posts = posts
+        // Not needed as we directly use presenter.posts now
     }
     
     func showUsers(_ users: [User]) {
-        self.users = users
+        // Not needed as we directly use presenter.users now
     }
     
     func showError(message: String) {

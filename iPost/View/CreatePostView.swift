@@ -9,7 +9,7 @@ import SwiftUI
 
 struct CreatePostView: View {
     @Environment(\.dismiss) private var dismiss
-    let presenter: PostsPresenterInputProtocol
+    @ObservedObject var presenter: PostsPresenter
     
     @State private var postText: String = ""
     @State private var selectedImageName: String?
