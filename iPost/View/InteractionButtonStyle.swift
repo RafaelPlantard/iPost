@@ -41,5 +41,4 @@ struct InteractionButtonStyle: ButtonStyle {
         .buttonStyle(InteractionButtonStyle())
     }
     .padding()
-    .previewLayout(.sizeThatFits)
 }
