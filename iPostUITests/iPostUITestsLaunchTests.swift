@@ -18,15 +18,43 @@ final class iPostUITestsLaunchTests: XCTestCase {
     }
 
     @MainActor
-    func testLaunch() throws {
+    func testLaunch() async throws {
         let app = XCUIApplication()
+        app.launchArguments = ["UI-TESTING"]
         app.launch()
-
-        // Insert steps here to perform after app launch but before taking a screenshot,
-        // such as logging into a test account or navigating somewhere in the app
-
+        
+        // Wait for app to fully load
+        let homeScreenExists = app.wait(for: .runningForeground, timeout: 2)
+        XCTAssertTrue(homeScreenExists)
+        
+        // Verify the navigation title exists
+        XCTAssertTrue(app.navigationBars["iPosts"].exists, "Navigation bar should exist")
+        
+        // Change user before taking the screenshot
+        // Tap user picker
+        let userPicker = app.otherElements["user-picker"]
+        XCTAssertTrue(userPicker.exists, "User picker should exist")
+        userPicker.tap()
+        
+        // Wait for user options to appear
+        let userOptions = app.buttons.matching(identifier: "user-option")
+        let optionsExist = userOptions.firstMatch.waitForExistence(timeout: 2)
+        XCTAssertTrue(optionsExist, "User options should appear")
+        
+        // Select the second user (if there are multiple users)
+        if userOptions.count > 1 {
+            userOptions.element(boundBy: 1).tap()
+        } else {
+            // If only one option exists, select it
+            userOptions.firstMatch.tap()
+        }
+        
+        // Wait for user change to take effect
+        try await Task.sleep(nanoseconds: 500_000_000) // 0.5 seconds
+        
+        // Take screenshot with the new user
         let attachment = XCTAttachment(screenshot: app.screenshot())
-        attachment.name = "Launch Screen"
+        attachment.name = "Home Screen with Different User"
         attachment.lifetime = .keepAlways
         add(attachment)
     }
