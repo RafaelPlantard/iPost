@@ -51,7 +51,9 @@ final class PostsInteractor: PostsInteractorInputProtocol {
             let users = try modelContext.fetch(descriptor)
             return users.first
         } catch {
-            presenter?.onError(message: "Failed to fetch user: \(error.localizedDescription)")
+            Task { @MainActor in
+                presenter?.onError(message: "Failed to fetch user: \(error.localizedDescription)")
+            }
             return nil
         }
     }

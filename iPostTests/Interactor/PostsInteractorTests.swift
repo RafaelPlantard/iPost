@@ -210,31 +210,23 @@ final class MockPostsInteractorOutput: PostsInteractorOutputProtocol {
     }
     
     func didFetchUsers(_ users: [User]) async {
-        await MainActor.run {
-            didFetchUsersCalled = true
-            didFetchUsersList = users
-        }
+        didFetchUsersCalled = true
+        didFetchUsersList = users
     }
     
-    func didCreatePost(_ post: Post) async {
-        await MainActor.run {
-            didCreatePostCalled = true
-            didCreatePostParam = post
-        }
+    func didCreatePost(_ post: Post) {
+        didCreatePostCalled = true
+        didCreatePostParam = post
     }
     
     func didSelectUser(_ userId: UUID) {
-        Task { @MainActor in
-            didSelectUserCalled = true
-            didSelectUserParam = userId
-        }
+        didSelectUserCalled = true
+        didSelectUserParam = userId
     }
     
     func onError(message: String) {
-        Task { @MainActor in
-            onErrorCalled = true
-            onErrorMessage = message
-        }
+        onErrorCalled = true
+        onErrorMessage = message
     }
 }
 
