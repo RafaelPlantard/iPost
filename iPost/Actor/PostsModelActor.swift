@@ -8,24 +8,30 @@
 import Foundation
 import SwiftData
 
+// Protocol defining the operations our ModelActor can perform
+protocol PostsModelActorProtocol: Actor {
+    func fetchUser(withId id: UUID) async -> UserDTO?
+    func fetchUsers() async -> [UserDTO]
+    func setupDummyUsers() async -> [UserDTO]
+    func fetchPosts() async -> [PostDTO]
+    func createPost(text: String, imageName: String?, forUser userId: UUID) async -> PostDTO?
+}
+
 // Define a global actor for SwiftData operations
-@globalActor actor PostsModelActor: GlobalActor {
-    static let shared = PostsModelActor()
+@globalActor actor PostsModelActor: GlobalActor, PostsModelActorProtocol {
+    static let shared = PostsModelActor(modelContext: ModelContainer.makeForPreview().mainContext)
 
     // The ModelContext should only be accessed within this actor
-    private var modelContext: ModelContext?
+    private var modelContext: ModelContext
 
     // Initialize with a ModelContext
-    func setModelContext(_ context: ModelContext) {
-        self.modelContext = context
+    init(modelContext: ModelContext) {
+        self.modelContext = modelContext
     }
 
     // MARK: - User Operations
 
     func fetchUser(withId id: UUID) async -> UserDTO? {
-        guard let modelContext = modelContext else {
-            return nil
-        }
 
         let descriptor = FetchDescriptor<User>(
             predicate: #Predicate { user in
@@ -42,9 +48,6 @@ import SwiftData
     }
 
     func fetchUsers() async -> [UserDTO] {
-        guard let modelContext = modelContext else {
-            return []
-        }
 
         do {
             let descriptor = FetchDescriptor<User>()
@@ -56,9 +59,6 @@ import SwiftData
     }
 
     func setupDummyUsers() async -> [UserDTO] {
-        guard let modelContext = modelContext else {
-            return []
-        }
 
         // Create sample users with better profile images
         let users = [
@@ -97,9 +97,6 @@ import SwiftData
     // MARK: - Post Operations
 
     func fetchPosts() async -> [PostDTO] {
-        guard let modelContext = modelContext else {
-            return []
-        }
 
         do {
             // Force SwiftData to process any pending changes first
@@ -125,9 +122,6 @@ import SwiftData
     }
 
     func createPost(text: String, imageName: String?, forUser userId: UUID) async -> PostDTO? {
-        guard let modelContext = modelContext else {
-            return nil
-        }
 
         let descriptor = FetchDescriptor<User>(
             predicate: #Predicate { user in

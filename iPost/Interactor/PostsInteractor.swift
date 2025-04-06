@@ -32,17 +32,12 @@ protocol PostsInteractorOutputProtocol: AnyObject {
 @MainActor
 final class PostsInteractor: PostsInteractorInputProtocol, @unchecked Sendable {
     weak var presenter: PostsInteractorOutputProtocol?
-    private let modelActor: PostsModelActor
+    private let modelActor: PostsModelActorProtocol
     private let userPreferencesInteractor: UserPreferencesInteractorInputProtocol
 
-    init(modelContext: ModelContext, userPreferencesInteractor: UserPreferencesInteractorInputProtocol = UserPreferencesInteractor()) {
-        self.modelActor = PostsModelActor.shared
+    init(modelActor: PostsModelActorProtocol, userPreferencesInteractor: UserPreferencesInteractorInputProtocol = UserPreferencesInteractor()) {
+        self.modelActor = modelActor
         self.userPreferencesInteractor = userPreferencesInteractor
-
-        // Set the model context in the actor
-        Task {
-            await modelActor.setModelContext(modelContext)
-        }
     }
 
     func saveSelectedUserId(_ userId: UUID?) {

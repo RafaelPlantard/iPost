@@ -12,32 +12,35 @@ import SwiftData
 @MainActor
 final class PostsRouter: PostsRouterProtocol {
     private weak var presenter: PostsPresenterInputProtocol?
-    
+
     init(presenter: PostsPresenterInputProtocol? = nil) {
         self.presenter = presenter
     }
-    
+
     @MainActor
     static func createModule(modelContext: ModelContext) -> (view: AnyView, presenter: PostsPresenterInputProtocol) {
         // Create router
         let router = PostsRouter()
-        
+
         // Create user preferences interactor for persistence
         let userPreferencesInteractor = UserPreferencesInteractor()
-        
+
+        // Create model actor for SwiftData operations
+        let modelActor = PostsModelActor(modelContext: modelContext)
+
         // Create main interactor with dependencies
-        let interactor = PostsInteractor(modelContext: modelContext, userPreferencesInteractor: userPreferencesInteractor)
-        
+        let interactor = PostsInteractor(modelActor: modelActor, userPreferencesInteractor: userPreferencesInteractor)
+
         // Create presenter (no view dependency)
         let presenter = PostsPresenter(interactor: interactor, router: router)
-        
+
         // Create the view with presenter
         let view = PostsView(presenter: presenter)
-        
+
         // Set presenter references (view/viewState connection happens in the view initializer)
         router.presenter = presenter
         interactor.presenter = presenter
-        
+
         return (AnyView(view), presenter)
     }
 
@@ -49,7 +52,7 @@ final class PostsRouter: PostsRouterProtocol {
         guard let presentingPresenter = presenter else {
             return AnyView(Text("No presenter available"))
         }
-        
+
         // Create view with dismiss callback - note this provides a protocol-based mechanism
         // for the view to communicate back to the router when it needs to dismiss
         return AnyView(CreatePostView(presenter: presentingPresenter))

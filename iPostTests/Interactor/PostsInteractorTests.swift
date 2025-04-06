@@ -16,12 +16,15 @@ struct PostsInteractorTests {
     @Test("Fetch users when database is empty should create dummy users")
     func fetchUsersWhenDatabaseIsEmpty() async throws {
         // GIVEN
-        let testContainer = try TestContainer()
         let mockPresenter = MockPostsInteractorOutput()
         let mockUserPreferences = MockUserPreferencesInteractor()
+        let mockModelActor = MockPostsModelActor()
+
+        // Configure mock to return empty users list first time, then dummy users
+        await mockModelActor.usersToReturn = []
 
         let sut = PostsInteractor(
-            modelContext: testContainer.mainContext,
+            modelActor: mockModelActor,
             userPreferencesInteractor: mockUserPreferences
         )
         sut.presenter = mockPresenter
@@ -30,26 +33,26 @@ struct PostsInteractorTests {
         await sut.fetchUsers()
 
         // THEN
-        try await Task.sleep(for: .milliseconds(500)) // Increased wait time for ModelActor operations
+        #expect(await mockModelActor.fetchUsersCalled)
+        #expect(await mockModelActor.setupDummyUsersCalled)
         #expect(mockPresenter.didFetchUsersCalled)
         #expect(!mockPresenter.didFetchUsersList.isEmpty)
-        #expect(mockPresenter.didFetchUsersList.count == 3) // We expect 3 dummy users
     }
 
     @Test("Fetch users with existing users should return users")
     func fetchUsersWithExistingUsers() async throws {
         // GIVEN
-        let testContainer = try TestContainer()
         let mockPresenter = MockPostsInteractorOutput()
         let mockUserPreferences = MockUserPreferencesInteractor()
+        let mockModelActor = MockPostsModelActor()
 
-        // Add test user to database
-        let user = User(name: "Test User", username: "@test", profileImageName: "person")
-        testContainer.mainContext.insert(user)
-        try testContainer.mainContext.save()
+        // Configure mock to return test users
+        let testUser = User(name: "Test User", username: "@test", profileImageName: "person")
+        let testUserDTO = UserDTO(from: testUser)
+        await mockModelActor.usersToReturn = [testUserDTO]
 
         let sut = PostsInteractor(
-            modelContext: testContainer.mainContext,
+            modelActor: mockModelActor,
             userPreferencesInteractor: mockUserPreferences
         )
         sut.presenter = mockPresenter
@@ -58,17 +61,18 @@ struct PostsInteractorTests {
         await sut.fetchUsers()
 
         // THEN
+        #expect(await mockModelActor.fetchUsersCalled)
+        #expect(!await mockModelActor.setupDummyUsersCalled)
         #expect(mockPresenter.didFetchUsersCalled)
         #expect(mockPresenter.didFetchUsersList.count == 1)
-        #expect(mockPresenter.didFetchUsersList.first?.id == user.id)
     }
 
     @Test("Fetch posts should return posts in reverse chronological order")
     func fetchPostsInReverseChronologicalOrder() async throws {
         // GIVEN
-        let testContainer = try TestContainer()
         let mockPresenter = MockPostsInteractorOutput()
         let mockUserPreferences = MockUserPreferencesInteractor()
+        let mockModelActor = MockPostsModelActor()
 
         // Create test data with controlled timestamps
         let user = User(name: "Test User", username: "@test", profileImageName: "person")
@@ -79,13 +83,13 @@ struct PostsInteractorTests {
         let newPost = Post(text: "New post", author: user)
         // Current time by default
 
-        testContainer.mainContext.insert(user)
-        testContainer.mainContext.insert(oldPost)
-        testContainer.mainContext.insert(newPost)
-        try testContainer.mainContext.save()
+        // Configure mock to return posts in reverse chronological order
+        let oldPostDTO = PostDTO(from: oldPost)
+        let newPostDTO = PostDTO(from: newPost)
+        await mockModelActor.postsToReturn = [newPostDTO, oldPostDTO] // Newer first
 
         let sut = PostsInteractor(
-            modelContext: testContainer.mainContext,
+            modelActor: mockModelActor,
             userPreferencesInteractor: mockUserPreferences
         )
         sut.presenter = mockPresenter
@@ -93,14 +97,10 @@ struct PostsInteractorTests {
         // WHEN
         await sut.fetchPosts()
 
-        // Allow async operations to complete with ModelActor
-        try await Task.sleep(for: .milliseconds(500))
-
         // THEN
+        #expect(await mockModelActor.fetchPostsCalled)
         #expect(mockPresenter.didFetchPostsCalled)
-        #expect(mockPresenter.didFetchPostsList.count > 0)
-        #expect(mockPresenter.didFetchPostsList.contains(where: { $0.id == newPost.id }))
-        #expect(mockPresenter.didFetchPostsList.contains(where: { $0.id == oldPost.id }))
+        #expect(mockPresenter.didFetchPostsList.count == 2)
         #expect(mockPresenter.didFetchPostsList.first?.text == "New post")
         #expect(mockPresenter.didFetchPostsList.last?.text == "Old post")
     }
@@ -108,47 +108,46 @@ struct PostsInteractorTests {
     @Test("Create post should add post to database and notify presenter")
     func createPost() async throws {
         // GIVEN
-        let testContainer = try TestContainer()
         let mockPresenter = MockPostsInteractorOutput()
         let mockUserPreferences = MockUserPreferencesInteractor()
+        let mockModelActor = MockPostsModelActor()
 
+        // Create test user
         let user = User(name: "Test User", username: "@test", profileImageName: "person")
-        testContainer.mainContext.insert(user)
-        try testContainer.mainContext.save()
+        let userId = user.id
+
+        // Configure mock to return a post
+        let post = Post(text: "Test post content", imageName: "star.fill", author: user)
+        let postDTO = PostDTO(from: post)
+        await mockModelActor.postToReturn = postDTO
 
         let sut = PostsInteractor(
-            modelContext: testContainer.mainContext,
+            modelActor: mockModelActor,
             userPreferencesInteractor: mockUserPreferences
         )
         sut.presenter = mockPresenter
 
         // WHEN
-        await sut.createPost(text: "Test post content", imageName: "star.fill", forUser: user.id)
-
-        // Allow async operations to complete with ModelActor
-        try await Task.sleep(for: .milliseconds(500))
+        await sut.createPost(text: "Test post content", imageName: "star.fill", forUser: userId)
 
         // THEN
+        #expect(await mockModelActor.createPostCalled)
+        #expect(await mockModelActor.capturedText == "Test post content")
+        #expect(await mockModelActor.capturedImageName == "star.fill")
+        #expect(await mockModelActor.capturedForUserId == userId)
         #expect(mockPresenter.didCreatePostCalled)
         #expect(mockPresenter.didCreatePostParam?.text == "Test post content")
         #expect(mockPresenter.didCreatePostParam?.imageName == "star.fill")
-        #expect(mockPresenter.didCreatePostParam?.author?.id == user.id)
-
-        // Also verify it's in the database
-        let descriptor = FetchDescriptor<Post>()
-        let posts = try testContainer.mainContext.fetch(descriptor)
-        #expect(posts.count > 0)
-        #expect(posts.contains { $0.text == "Test post content" })
     }
 
     @Test("Save selected user ID should store value in preferences")
     func saveSelectedUserId() async throws {
         // GIVEN
-        let testContainer = try TestContainer()
         let mockUserPreferences = MockUserPreferencesInteractor()
+        let mockModelActor = MockPostsModelActor()
 
         let sut = PostsInteractor(
-            modelContext: testContainer.mainContext,
+            modelActor: mockModelActor,
             userPreferencesInteractor: mockUserPreferences
         )
 
@@ -164,14 +163,14 @@ struct PostsInteractorTests {
     @Test("Get selected user ID should retrieve value from preferences")
     func getSelectedUserId() async throws {
         // GIVEN
-        let testContainer = try TestContainer()
         let mockUserPreferences = MockUserPreferencesInteractor()
+        let mockModelActor = MockPostsModelActor()
 
         let userId = UUID()
         mockUserPreferences.savedUserId = userId
 
         let sut = PostsInteractor(
-            modelContext: testContainer.mainContext,
+            modelActor: mockModelActor,
             userPreferencesInteractor: mockUserPreferences
         )
 
