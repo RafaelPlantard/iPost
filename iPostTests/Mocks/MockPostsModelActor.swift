@@ -5,8 +5,10 @@
 //  Created on 06/04/25.
 //
 
-import Foundation
 @testable import iPosts
+
+import Foundation
+import SwiftData
 
 // A mock implementation of PostsModelActorProtocol for testing
 @ModelActor
@@ -19,11 +21,11 @@ actor MockPostsModelActor: PostsModelActorProtocol {
     var createPostCalled = false
 
     // Test data
-    var userToReturn: UserDTO?
-    var usersToReturn: [UserDTO] = []
-    var dummyUsersToReturn: [UserDTO] = []
-    var postsToReturn: [PostDTO] = []
-    var postToReturn: PostDTO?
+    private var userToReturn: UserDTO?
+    private var usersToReturn: [UserDTO] = []
+    private var dummyUsersToReturn: [UserDTO] = []
+    private var postsToReturn: [PostDTO] = []
+    private var postToReturn: PostDTO?
 
     // Captured parameters
     var capturedUserId: UUID?
@@ -31,8 +33,8 @@ actor MockPostsModelActor: PostsModelActorProtocol {
     var capturedImageName: String?
     var capturedForUserId: UUID?
 
-    // Default implementation with test data
-    init(modelContainer: ModelContainer) {
+    // Setup methods for test data
+    func setupDefaultTestData() {
         // Create some test data
         let user1 = UserDTO(from: User(name: "Test User 1", username: "@test1", profileImageName: "person.fill"))
         let user2 = UserDTO(from: User(name: "Test User 2", username: "@test2", profileImageName: "person.circle"))
@@ -47,6 +49,23 @@ actor MockPostsModelActor: PostsModelActorProtocol {
 
         postsToReturn = [post1, post2]
         postToReturn = post1
+    }
+
+    // Methods to configure test data
+    func setEmptyUsersList() {
+        usersToReturn = []
+    }
+
+    func setUsersList(_ users: [UserDTO]) {
+        usersToReturn = users
+    }
+
+    func setPostsList(_ posts: [PostDTO]) {
+        postsToReturn = posts
+    }
+
+    func setPostToReturn(_ post: PostDTO) {
+        postToReturn = post
     }
 
     // MARK: - Protocol Implementation

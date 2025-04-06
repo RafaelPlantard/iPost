@@ -21,8 +21,9 @@ struct PostsInteractorTests {
         let testContainer = try TestContainer()
         let mockModelActor = MockPostsModelActor(modelContainer: testContainer.container)
 
-        // Configure mock to return empty users list first time, then dummy users
-        await mockModelActor.usersToReturn = []
+        // Setup test data and configure mock to return empty users list first time
+        await mockModelActor.setupDefaultTestData()
+        await mockModelActor.setEmptyUsersList()
 
         let sut = PostsInteractor(
             modelActor: mockModelActor,
@@ -48,10 +49,11 @@ struct PostsInteractorTests {
         let testContainer = try TestContainer()
         let mockModelActor = MockPostsModelActor(modelContainer: testContainer.container)
 
-        // Configure mock to return test users
+        // Setup test data and configure mock to return specific test users
+        await mockModelActor.setupDefaultTestData()
         let testUser = User(name: "Test User", username: "@test", profileImageName: "person")
         let testUserDTO = UserDTO(from: testUser)
-        await mockModelActor.usersToReturn = [testUserDTO]
+        await mockModelActor.setUsersList([testUserDTO])
 
         let sut = PostsInteractor(
             modelActor: mockModelActor,
@@ -64,7 +66,7 @@ struct PostsInteractorTests {
 
         // THEN
         #expect(await mockModelActor.fetchUsersCalled)
-        #expect(!await mockModelActor.setupDummyUsersCalled)
+        #expect(!(await mockModelActor.setupDummyUsersCalled))
         #expect(mockPresenter.didFetchUsersCalled)
         #expect(mockPresenter.didFetchUsersList.count == 1)
     }
@@ -76,6 +78,9 @@ struct PostsInteractorTests {
         let mockUserPreferences = MockUserPreferencesInteractor()
         let testContainer = try TestContainer()
         let mockModelActor = MockPostsModelActor(modelContainer: testContainer.container)
+
+        // Setup test data
+        await mockModelActor.setupDefaultTestData()
 
         // Create test data with controlled timestamps
         let user = User(name: "Test User", username: "@test", profileImageName: "person")
@@ -89,7 +94,7 @@ struct PostsInteractorTests {
         // Configure mock to return posts in reverse chronological order
         let oldPostDTO = PostDTO(from: oldPost)
         let newPostDTO = PostDTO(from: newPost)
-        await mockModelActor.postsToReturn = [newPostDTO, oldPostDTO] // Newer first
+        await mockModelActor.setPostsList([newPostDTO, oldPostDTO]) // Newer first
 
         let sut = PostsInteractor(
             modelActor: mockModelActor,
@@ -116,6 +121,9 @@ struct PostsInteractorTests {
         let testContainer = try TestContainer()
         let mockModelActor = MockPostsModelActor(modelContainer: testContainer.container)
 
+        // Setup test data
+        await mockModelActor.setupDefaultTestData()
+
         // Create test user
         let user = User(name: "Test User", username: "@test", profileImageName: "person")
         let userId = user.id
@@ -123,7 +131,7 @@ struct PostsInteractorTests {
         // Configure mock to return a post
         let post = Post(text: "Test post content", imageName: "star.fill", author: user)
         let postDTO = PostDTO(from: post)
-        await mockModelActor.postToReturn = postDTO
+        await mockModelActor.setPostToReturn(postDTO)
 
         let sut = PostsInteractor(
             modelActor: mockModelActor,
@@ -148,7 +156,8 @@ struct PostsInteractorTests {
     func saveSelectedUserId() async throws {
         // GIVEN
         let mockUserPreferences = MockUserPreferencesInteractor()
-        let mockModelActor = MockPostsModelActor()
+        let testContainer = try TestContainer()
+        let mockModelActor = MockPostsModelActor(modelContainer: testContainer.container)
 
         let sut = PostsInteractor(
             modelActor: mockModelActor,
@@ -168,7 +177,8 @@ struct PostsInteractorTests {
     func getSelectedUserId() async throws {
         // GIVEN
         let mockUserPreferences = MockUserPreferencesInteractor()
-        let mockModelActor = MockPostsModelActor()
+        let testContainer = try TestContainer()
+        let mockModelActor = MockPostsModelActor(modelContainer: testContainer.container)
 
         let userId = UUID()
         mockUserPreferences.savedUserId = userId
