@@ -9,10 +9,17 @@ import Foundation
 import SwiftUI
 
 struct ToastMessage: Identifiable, Equatable {
-    var id = UUID()
+    let id: UUID
     let message: String
     let type: ToastType
     var duration: TimeInterval = 3
+    
+    init(message: String, type: ToastType, duration: TimeInterval = 3, id: UUID = UUID()) {
+        self.message = message
+        self.type = type
+        self.duration = duration
+        self.id = id
+    }
     
     enum ToastType {
         case success

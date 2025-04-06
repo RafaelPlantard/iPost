@@ -10,6 +10,7 @@ import SwiftUI
 /// A view that shows a toast notification
 final class ToastManager: ObservableObject {
     @Published var currentToast: ToastMessage?
+    private var dismissTask: Task<Void, Never>? = nil
     
     /// Singleton instance
     static let shared = ToastManager()
@@ -18,25 +19,53 @@ final class ToastManager: ObservableObject {
     
     @MainActor
     func show(message: String, type: ToastMessage.ToastType, duration: TimeInterval = 3.0) {
-        // Clear any existing toast first
-        currentToast = nil
+        // Cancel any existing dismiss task
+        dismissTask?.cancel()
+        dismissTask = nil
         
-        // Slight delay to ensure animation works correctly when showing sequential toasts
+        // Force a UI refresh by clearing and then setting with a small delay
+        withAnimation(.easeOut(duration: 0.3)) {
+            // First clear existing toast
+            currentToast = nil
+        }
+        
+        // Create a new toast with a slight delay for animation
         Task { @MainActor in
-            try? await Task.sleep(for: .milliseconds(50))
-            currentToast = ToastMessage(message: message, type: type)
+            // Small delay to ensure animation sequence works correctly
+            try? await Task.sleep(for: .milliseconds(100))
             
-            // Auto dismiss after duration
-            try? await Task.sleep(for: .seconds(duration))
-            withAnimation {
-                currentToast = nil
+            // Show the new toast with animation
+            withAnimation(.spring(duration: 0.5)) {
+                currentToast = ToastMessage(message: message, type: type, id: UUID())
+                // We add a unique ID to force SwiftUI to recognize it as a new value
+            }
+            
+            // Create a new task for auto-dismissal
+            dismissTask = Task { @MainActor in
+                do {
+                    // Wait for the duration
+                    try await Task.sleep(for: .seconds(duration))
+                    // Only dismiss if not cancelled
+                    if !Task.isCancelled {
+                        withAnimation(.easeOut(duration: 0.3)) {
+                            currentToast = nil
+                        }
+                    }
+                } catch {
+                    // Task was cancelled, do nothing
+                }
             }
         }
     }
     
     @MainActor
     func dismiss() {
-        withAnimation {
+        // Cancel any existing dismiss task
+        dismissTask?.cancel()
+        dismissTask = nil
+        
+        // Animate the dismissal
+        withAnimation(.easeOut(duration: 0.3)) {
             currentToast = nil
         }
     }

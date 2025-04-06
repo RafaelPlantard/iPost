@@ -62,10 +62,20 @@ final class PostsViewState: ObservableObject, PostsPresenterOutputProtocol {
     
     func updatePosts(_ posts: [Post]) {
         isLoading = false
-        // Force view update with a new array instance
-        self.posts = posts
-        // Force view update by explicitly calling objectWillChange
-        objectWillChange.send()
+        // Use a strong approach to ensure the view updates
+        // First create a brand new array instance to force SwiftUI to detect the change
+        let newPosts = Array(posts)
+        
+        // Then assign to our property
+        self.posts = newPosts
+        
+        // Force UI update by explicitly sending the change notification on main actor
+        Task { @MainActor in
+            // Double objectWillChange to ensure the view rebuilds completely
+            objectWillChange.send()
+            try? await Task.sleep(nanoseconds: 10_000_000) // 10ms delay
+            objectWillChange.send() // Send again to ensure any SwiftUI optimizations don't skip the update
+        }
     }
     
     func updateUsers(_ users: [User]) {
@@ -84,26 +94,30 @@ final class PostsViewState: ObservableObject, PostsPresenterOutputProtocol {
     }
     
     func showToast(message: String, type: ToastMessage.ToastType) {
-        // Use the toast manager instead of managing toast state ourselves
-        ToastManager.shared.show(message: message, type: type)
+        // Make sure we're on the main actor when showing toast
+        if Thread.isMainThread {
+            // Use the toast manager to show the message
+            ToastManager.shared.show(message: message, type: type)
+        } else {
+            // If we're not on the main thread, dispatch to main
+            Task { @MainActor in
+                ToastManager.shared.show(message: message, type: type)
+            }
+        }
     }
     
     func postCreated() {
-        // First hide the sheet
+        // First hide the sheet immediately 
         showCreatePostSheet = false
         
         // Show loading spinner while refreshing
         isLoading = true
         
-        // Immediately fetch posts with no delay
-        // This ensures the UI is updated with the latest posts right away
-        Task {
-            // No need for artificial delay as we're just waiting for the view to update
-            await presenter?.fetchPosts()
-            
-            // This explicit call to objectWillChange ensures the UI rebuilds
-            // even if SwiftUI doesn't detect the changes automatically
-            objectWillChange.send()
-        }
+        // We're going to use a complete UI refresh approach
+        // The presenter will handle fetching the posts after dismissal
+        // We focus purely on UI state management here
+        
+        // Force a view update right now to ensure the loading indicator shows
+        objectWillChange.send()
     }
 }

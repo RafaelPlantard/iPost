@@ -47,7 +47,11 @@ extension PostsPresenter: PostsPresenterInputProtocol {
         }
         
         // Show creating toast before creating the post
+        // Add an explicit delay to ensure toast is visible
         viewState?.showToast(message: "Creating post...", type: .info)
+        
+        // Small delay to ensure the toast is displayed before heavy operations begin
+        try? await Task.sleep(for: .milliseconds(200))
         
         // Since this method is now async, we can directly await the interactor call
         await interactor.createPost(text: text, imageName: imageName, forUser: userId)
@@ -100,24 +104,31 @@ extension PostsPresenter: PostsInteractorOutputProtocol {
     }
     
     func didCreatePost(_ post: Post) {
-        // First add the new post to our local array to update the UI immediately
-        // This ensures we don't have to wait for a full refresh
-        if !posts.contains(where: { $0.id == post.id }) {
-            posts.insert(post, at: 0) // Add to the beginning since posts are shown newest first
-            viewState?.updatePosts(posts) // Update UI with the modified array
-        }
-        
-        // Notify view that post was created so it can dismiss sheet
+        // We're going to use a different approach that's more reliable
+        // Notify view that post was created so it can dismiss sheet first
         viewState?.postCreated()
         
-        // Show success toast after a small delay to allow the modal to dismiss first
-        Task {
-            try? await Task.sleep(for: .milliseconds(300))
+        // Create a separate task for UI updates to avoid blocking
+        Task { @MainActor in
+            // Short delay to let the dismiss animation begin
+            try? await Task.sleep(for: .milliseconds(100))
+            
+            // First show the success toast
             viewState?.showToast(message: "Post created successfully!", type: .success)
             
-            // After the toast is shown, fetch posts to ensure our list stays in sync
-            try? await Task.sleep(for: .milliseconds(500))
+            // Perform a complete refresh from the database to ensure all
+            // SwiftData observers are properly updated
             await interactor.fetchPosts()
+            
+            // Add newly created post to the beginning of our list
+            // This ensures it's visible even if the fetch is delayed
+            // But we need to check it's not already there first
+            if !posts.contains(where: { $0.id == post.id }) {
+                var updatedPosts = posts
+                updatedPosts.insert(post, at: 0)
+                self.posts = updatedPosts  // Update the presenter's copy
+                viewState?.updatePosts(updatedPosts)  // Update the UI
+            }
         }
     }
     

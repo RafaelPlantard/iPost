@@ -90,4 +90,51 @@ final class iPostUITests: XCTestCase {
             XCUIApplication().launch()
         }
     }
+    
+    @MainActor
+    func testToastAppearsAfterPostCreation() async throws {
+        // Launch the app with testing configuration
+        let app = XCUIApplication()
+        app.launchArguments = ["UI-TESTING"]
+        app.launch()
+        
+        // Wait for app to fully load
+        let homeScreenExists = app.wait(for: .runningForeground, timeout: 2)
+        XCTAssertTrue(homeScreenExists)
+        
+        // Verify the navigation title exists
+        XCTAssertTrue(app.navigationBars["iPosts"].exists)
+        
+        // Tap the create post button
+        let createPostButton = app.buttons["create-post-button"]
+        XCTAssertTrue(createPostButton.exists, "Create Post button should exist")
+        createPostButton.tap()
+        
+        // Wait for navigation title to show we're in create post view
+        let createPostNavTitle = app.navigationBars["Create Post"]
+        let createPostViewExists = createPostNavTitle.waitForExistence(timeout: 2)
+        XCTAssertTrue(createPostViewExists, "Create post view should appear")
+        
+        // Enter post text - Find the text field by placeholder text
+        let uniquePostText = "Toast test post created at \(Date().formatted(date: .numeric, time: .standard))"
+        let textField = app.textFields["What's on your mind?"]
+        XCTAssertTrue(textField.exists, "Post text field should exist")
+        textField.tap()
+        textField.typeText(uniquePostText)
+        
+        // Submit the post using the "Post" button
+        let submitButton = app.buttons["Post"]
+        XCTAssertTrue(submitButton.exists, "Post button should exist")
+        submitButton.tap()
+        
+        // Verify the toast message appears ("Post created successfully!")
+        // Since the toast may not have an accessibility identifier, we'll look for the text
+        let toastMessage = app.staticTexts["Post created successfully!"]
+        let toastExists = toastMessage.waitForExistence(timeout: 3)
+        XCTAssertTrue(toastExists, "Toast message should appear after creating a post")
+        
+        // Verify toast disappears after a few seconds (usually 3s)
+        try await Task.sleep(nanoseconds: 3_500_000_000) // 3.5 seconds
+        XCTAssertFalse(toastMessage.exists, "Toast message should disappear after timeout")
+    }
 }
