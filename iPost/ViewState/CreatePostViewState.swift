@@ -28,7 +28,7 @@ final class CreatePostViewState: ObservableObject, PostsPresenterOutputProtocol 
     @Published var users: [User] = []
     @Published var selectedUserId: UUID? = nil
     @Published var selectedUser: User? = nil
-    
+
     // Reference to the presenter for sending user actions
     private weak var presenter: PostsPresenterInputProtocol?
     private let dismiss: (() -> Void)?
@@ -36,7 +36,7 @@ final class CreatePostViewState: ObservableObject, PostsPresenterOutputProtocol 
     init(presenter: PostsPresenterInputProtocol, dismiss: @escaping (() -> Void)) {
         self.presenter = presenter
         self.dismiss = dismiss
-        
+
         // Initialize with data from presenter
         if let concretePresenter = presenter as? PostsPresenter {
             // This approach gives us access to concrete presenter properties
@@ -51,90 +51,99 @@ final class CreatePostViewState: ObservableObject, PostsPresenterOutputProtocol 
             self.selectedUser = presenter.users.first(where: { $0.id == presenter.selectedUserId })
         }
     }
-    
+
     // MARK: - User actions
-    
+
     func createPost() {
         guard selectedUserId != nil else {
             // Handle error - need to select a user first
             return
         }
-        
+
         // Save a copy of the entered text in case we need to restore it
         let savedText = postText
         let savedImageName = selectedImageName
-        
+
+        // Show loading state
+        isLoading = true
+        objectWillChange.send()
+
         // Call the presenter to create the post
         Task {
             await presenter?.createPost(text: savedText, imageName: savedImageName)
-            
-            // Clear the form
-            clearForm()
-            
-            // Dismiss the view after a short delay to allow animations to complete
-            try? await Task.sleep(for: .milliseconds(300))
+
+            // Clear the form immediately on the main actor
             await MainActor.run {
-                self.dismiss?()
+                clearForm()
             }
+
+            // The presenter will handle dismissing the view through postCreated()
         }
     }
-    
+
     func selectImage(_ imageName: String) {
         selectedImageName = imageName
         showImagePicker = false
     }
-    
+
     func removeImage() {
         selectedImageName = nil
     }
-    
+
     func showImagePickerView() {
         showImagePicker = true
     }
-    
+
     func hideImagePickerView() {
         showImagePicker = false
     }
-    
+
     func dismissView() {
         clearForm()
         dismiss?()
     }
-    
+
     // MARK: - PostsPresenterOutputProtocol Implementation
-    
+
     func updatePosts(_ posts: [Post]) {
         // Not needed in this view
     }
-    
+
     func updateUsers(_ users: [User]) {
         // Since we're already on the MainActor (from protocol declaration)
         // we can directly update the property
         self.users = users
     }
-    
+
     func updateSelectedUser(id: UUID?) {
         self.selectedUserId = id
         self.selectedUser = users.first(where: { $0.id == id })
     }
-    
+
     func showError(message: String) {
         // Could be enhanced to show an error overlay or alert
     }
-    
+
     func showToast(message: String, type: ToastMessage.ToastType) {
         // Toast is handled by the parent view
     }
-    
+
     func postCreated() {
-        Task { @MainActor in
-            clearForm()
-            dismiss?()
+        // Clear the form
+        clearForm()
+
+        // Dismiss the view
+        Task {
+            // Small delay to allow animations to complete
+            try? await Task.sleep(for: .milliseconds(200))
+            await MainActor.run {
+                dismiss?()
+            }
         }
     }
-    
+
     // MARK: - State updates
-    
+
     private func clearForm() {
         postText = ""
         selectedImageName = nil

@@ -19,80 +19,86 @@ final class PostsViewState: ObservableObject, PostsPresenterOutputProtocol {
     @Published var toast: ToastMessage? = nil
     @Published var showCreatePostSheet: Bool = false
     @Published var isLoading: Bool = false
-    
+
     // Reference to the presenter for sending user actions
     private weak var presenter: PostsPresenterInputProtocol?
-    
+
     init(presenter: PostsPresenterInputProtocol) {
         self.presenter = presenter
     }
-    
+
     // MARK: - User actions
-    
+
     func loadInitialData() {
         // Show loading state
         isLoading = true
         presenter?.viewDidLoad()
     }
-    
+
     func refreshPosts() async {
         // Explicit refresh action
         isLoading = true
+        objectWillChange.send() // Force UI update to show loading indicator
         await presenter?.fetchPosts()
     }
-    
+
     func selectUser(id: UUID) async {
         isLoading = true
         await presenter?.selectUser(id: id)
     }
-    
+
     func createPost(text: String, imageName: String?) async {
         await presenter?.createPost(text: text, imageName: imageName)
     }
-    
+
     func showCreatePost() {
         showCreatePostSheet = true
     }
-    
+
     func hideCreatePost() {
         showCreatePostSheet = false
     }
-    
+
     // MARK: - PostsPresenterOutputProtocol Implementation
-    
+
     func updatePosts(_ posts: [Post]) {
+        // Turn off loading state
         isLoading = false
-        // Use a strong approach to ensure the view updates
-        // First create a brand new array instance to force SwiftUI to detect the change
+
+        // Create a completely new array to force SwiftUI to detect the change
         let newPosts = Array(posts)
-        
-        // Then assign to our property
+
+        // First send objectWillChange to notify observers that a change is coming
+        objectWillChange.send()
+
+        // Then update the posts property
         self.posts = newPosts
-        
-        // Force UI update by explicitly sending the change notification on main actor
-        Task { @MainActor in
-            // Double objectWillChange to ensure the view rebuilds completely
-            objectWillChange.send()
-            try? await Task.sleep(nanoseconds: 10_000_000) // 10ms delay
-            objectWillChange.send() // Send again to ensure any SwiftUI optimizations don't skip the update
+
+        // Send another objectWillChange to ensure the view updates
+        // This helps overcome SwiftUI's optimization that might skip updates
+        Task {
+            try? await Task.sleep(for: .milliseconds(10))
+            await MainActor.run {
+                objectWillChange.send()
+            }
         }
     }
-    
+
     func updateUsers(_ users: [User]) {
         self.users = users
         objectWillChange.send()
     }
-    
+
     func updateSelectedUser(id: UUID?) {
         self.selectedUserId = id
         objectWillChange.send()
     }
-    
+
     func showError(message: String) {
         self.errorMessage = message
         self.showingError = true
     }
-    
+
     func showToast(message: String, type: ToastMessage.ToastType) {
         // Make sure we're on the main actor when showing toast
         if Thread.isMainThread {
@@ -105,19 +111,18 @@ final class PostsViewState: ObservableObject, PostsPresenterOutputProtocol {
             }
         }
     }
-    
+
     func postCreated() {
-        // First hide the sheet immediately 
+        // First hide the sheet immediately
         showCreatePostSheet = false
-        
+
         // Show loading spinner while refreshing
         isLoading = true
-        
-        // We're going to use a complete UI refresh approach
-        // The presenter will handle fetching the posts after dismissal
-        // We focus purely on UI state management here
-        
+
         // Force a view update right now to ensure the loading indicator shows
         objectWillChange.send()
+
+        // The presenter will handle fetching the posts after dismissal
+        // and will call updatePosts() with the new data
     }
 }

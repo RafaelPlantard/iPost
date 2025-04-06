@@ -29,8 +29,8 @@ protocol PostsInteractorOutputProtocol: AnyObject {
 }
 
 // MARK: - PostsInteractor
+@MainActor
 final class PostsInteractor: PostsInteractorInputProtocol {
-    @MainActor
     weak var presenter: PostsInteractorOutputProtocol?
     private var modelContext: ModelContext
     private let userPreferencesInteractor: UserPreferencesInteractorInputProtocol
@@ -40,7 +40,6 @@ final class PostsInteractor: PostsInteractorInputProtocol {
         self.userPreferencesInteractor = userPreferencesInteractor
     }
 
-    @MainActor
     private func fetchUser(withId id: UUID) -> User? {
         let descriptor = FetchDescriptor<User>(
             predicate: #Predicate { user in
@@ -59,20 +58,17 @@ final class PostsInteractor: PostsInteractorInputProtocol {
         }
     }
 
-    @MainActor
     func saveSelectedUserId(_ userId: UUID?) {
         userPreferencesInteractor.saveSelectedUserId(userId)
     }
 
-    @MainActor
     func getSelectedUserId() -> UUID? {
         return userPreferencesInteractor.getSelectedUserId()
     }
 
-    @MainActor
     func fetchPosts() async {
         do {
-            // Clear any existing fetch cache to ensure fresh results
+            // Force SwiftData to process any pending changes first
             modelContext.processPendingChanges()
 
             // Create descriptor with explicit fetch policy for fresh results
@@ -81,19 +77,22 @@ final class PostsInteractor: PostsInteractorInputProtocol {
             )
             descriptor.fetchLimit = 50 // Limit to prevent performance issues
 
-            #if DEBUG
-            // Force SwiftData to refresh in debug mode
+            // Always include pending changes to ensure we get the latest data
             descriptor.includePendingChanges = true
-            #endif
 
+            // Explicitly tell SwiftData we want a fresh fetch
             let posts = try modelContext.fetch(descriptor)
-            presenter?.didFetchPosts(posts)
+
+            // Create a new array to ensure reference changes are detected
+            let freshPosts = Array(posts)
+
+            // Notify presenter with the fresh data
+            presenter?.didFetchPosts(freshPosts)
         } catch {
             presenter?.onError(message: "Failed to fetch posts: \(error.localizedDescription)")
         }
     }
 
-    @MainActor
     func createPost(text: String, imageName: String?, forUser userId: UUID) async {
         guard let user = fetchUser(withId: userId) else {
             presenter?.onError(message: "User not found")
@@ -115,15 +114,16 @@ final class PostsInteractor: PostsInteractorInputProtocol {
             // Notify the presenter that post was created successfully
             presenter?.didCreatePost(post)
 
-            // Immediately fetch posts with no delay
-            // This ensures the UI is updated with the new post right away
+            // Add a small delay to allow SwiftData to fully process the changes
+            try await Task.sleep(for: .milliseconds(300))
+
+            // Explicitly fetch posts again to ensure the UI is updated
             await fetchPosts()
         } catch {
             presenter?.onError(message: "Failed to create post: \(error.localizedDescription)")
         }
     }
 
-    @MainActor
     func fetchUsers() async {
         do {
             let descriptor = FetchDescriptor<User>()
@@ -153,7 +153,6 @@ final class PostsInteractor: PostsInteractorInputProtocol {
         }
     }
 
-    @MainActor
     private func setupDummyUsers() async {
         // Create sample users
         let users = [
