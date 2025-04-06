@@ -11,7 +11,7 @@ import Combine
 
 // MARK: - PostsPresenter
 @MainActor
-final class PostsPresenter: ObservableObject {
+final class PostsPresenter: ObservableObject, @unchecked Sendable {
     weak var viewState: PostsPresenterOutputProtocol?
     private let interactor: PostsInteractorInputProtocol
     private let router: PostsRouterProtocol

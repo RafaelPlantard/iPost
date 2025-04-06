@@ -8,6 +8,7 @@
 import SwiftUI
 import Combine
 
+@MainActor
 final class CreatePostViewState: ObservableObject {
     // UI state properties
     @Published var postText: String = ""
@@ -38,6 +39,7 @@ final class CreatePostViewState: ObservableObject {
         self.dismiss = dismiss
 
         // Initialize with data from presenter
+        // Since we're using @MainActor, we're already on the main thread
         if let concretePresenter = presenter as? PostsPresenter {
             // This approach gives us access to concrete presenter properties
             // but maintains protocol boundaries in the rest of the code
@@ -72,10 +74,8 @@ final class CreatePostViewState: ObservableObject {
         Task {
             await presenter?.createPost(text: savedText, imageName: savedImageName)
 
-            // Handle post creation completion
-            await MainActor.run {
-                handlePostCreated()
-            }
+            // Since we're already on the main actor, we don't need MainActor.run
+            handlePostCreated()
         }
     }
 
@@ -110,9 +110,8 @@ final class CreatePostViewState: ObservableObject {
         Task {
             // Small delay to allow animations to complete
             try? await Task.sleep(for: .milliseconds(200))
-            await MainActor.run {
-                dismiss?()
-            }
+            // Since we're already on the main actor, we can call dismiss directly
+            dismiss?()
         }
     }
 

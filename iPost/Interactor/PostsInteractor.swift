@@ -30,7 +30,7 @@ protocol PostsInteractorOutputProtocol: AnyObject {
 
 // MARK: - PostsInteractor
 @MainActor
-final class PostsInteractor: PostsInteractorInputProtocol {
+final class PostsInteractor: PostsInteractorInputProtocol, @unchecked Sendable {
     weak var presenter: PostsInteractorOutputProtocol?
     private var modelContext: ModelContext
     private let userPreferencesInteractor: UserPreferencesInteractorInputProtocol
