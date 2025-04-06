@@ -124,7 +124,7 @@ struct PostsPresenterTests {
         ]
         
         // WHEN
-        await sut.didFetchPosts(posts)
+        sut.didFetchPosts(posts)
         
         // THEN
         #expect(mockViewState.updatePostsCalled)
@@ -172,13 +172,13 @@ struct PostsPresenterTests {
         let post = Post(text: "New post", author: user)
         
         // WHEN
-        await sut.didCreatePost(post)
+        sut.didCreatePost(post)
         
         // THEN - First check if postCreated was called
         #expect(mockViewState.postCreatedCalled)
         
         // Wait for the async toast display
-        await Task.sleep(for: .milliseconds(500))
+        try await Task.sleep(for: .milliseconds(500))
         
         // Then check toast was displayed
         #expect(mockViewState.showToastCalled)
@@ -305,7 +305,7 @@ final class MockPostsViewState: PostsPresenterOutputProtocol {
         self.posts = posts
     }
     
-    func updateUsers(_ users: [User]) async {
+    func updateUsers(_ users: [User]) {
         updateUsersCalled = true
         self.users = users
     }
