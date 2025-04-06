@@ -24,7 +24,7 @@ final class PostsRouter: PostsRouterProtocol {
         let interactor = PostsInteractor(modelContext: modelContext)
         
         // Create view
-        let view = PostsView()
+        let view = PostsView(presenter: presenter)
         
         // Create presenter and set dependencies
         let presenter = PostsPresenter(view: view, interactor: interactor, router: router)
@@ -36,12 +36,14 @@ final class PostsRouter: PostsRouterProtocol {
         
         return (AnyView(view), presenter)
     }
-}
 
-// MARK: - PostsRouterProtocol
-extension PostsRouter: PostsRouterProtocol {
+    // MARK: - PostsRouterProtocol Implementation
+
     func makeCreatePostView() -> AnyView {
         // In a more complex app, we might pass dependencies here
+        guard let presenter = presenter else {
+            return AnyView(Text("No presenter available"))
+        }
         return AnyView(CreatePostView(presenter: presenter))
     }
 }

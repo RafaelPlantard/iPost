@@ -172,15 +172,8 @@ extension PostsView: PostsPresenterOutputProtocol {
     modelContext.insert(post1)
     modelContext.insert(post2)
     
-    // Initialize VIPER module
-    let router = PostsRouter()
-    let interactor = PostsInteractor(modelContext: modelContext)
-    let view = PostsView()
-    let presenter = PostsPresenter(view: view, interactor: interactor, router: router)
+    // Initialize VIPER module using the createModule helper
+    let (view, _) = PostsRouter.createModule(modelContext: modelContext)
     
-    router.presenter = presenter
-    interactor.presenter = presenter
-    view.presenter = presenter
-    
-    view
+    return AnyView(view)
 }

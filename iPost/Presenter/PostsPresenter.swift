@@ -20,7 +20,7 @@ protocol PostsPresenterInputProtocol: AnyObject {
 }
 
 // PostsPresenterOutputProtocol: Protocol that defines the methods the presenter can call on the view
-protocol PostsPresenterOutputProtocol: AnyObject {
+protocol PostsPresenterOutputProtocol {
     func showPosts(_ posts: [Post])
     func showUsers(_ users: [User])
     func showError(message: String)
@@ -29,7 +29,7 @@ protocol PostsPresenterOutputProtocol: AnyObject {
 
 // MARK: - PostsPresenter
 final class PostsPresenter: ObservableObject {
-    private weak var view: PostsPresenterOutputProtocol?
+    weak var view: PostsPresenterOutputProtocol?
     private let interactor: PostsInteractorInputProtocol
     private let router: PostsRouter
     
