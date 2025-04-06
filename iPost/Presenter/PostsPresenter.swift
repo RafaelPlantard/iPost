@@ -40,20 +40,17 @@ extension PostsPresenter: PostsPresenterInputProtocol {
         }
     }
     
-    func createPost(text: String, imageName: String?) {
+    func createPost(text: String, imageName: String?) async {
         guard let userId = selectedUserId else {
             viewState?.showError(message: "Please select a user first")
             return
         }
         
-        // Show creating toast before dispatching to avoid UI hang
+        // Show creating toast before creating the post
         viewState?.showToast(message: "Creating post...", type: .info)
         
-        // Use Swift concurrency to handle the creation
-        Task.detached(priority: .userInitiated) { [weak self] in
-            guard let self = self else { return }
-            await self.interactor.createPost(text: text, imageName: imageName, forUser: userId)
-        }
+        // Since this method is now async, we can directly await the interactor call
+        await interactor.createPost(text: text, imageName: imageName, forUser: userId)
     }
     
     func selectUser(id: UUID) async {

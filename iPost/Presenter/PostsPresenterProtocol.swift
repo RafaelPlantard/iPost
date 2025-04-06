@@ -13,9 +13,9 @@ protocol PostsPresenterInputProtocol: AnyObject {
     var selectedUserId: UUID? { get }
     
     func viewDidLoad()
-    func createPost(text: String, imageName: String?)
-    func selectUser(id: UUID)
-    func fetchPosts() // Add explicit fetch posts method for refreshing
+    func createPost(text: String, imageName: String?) async
+    func selectUser(id: UUID) async
+    func fetchPosts() async // Add explicit fetch posts method for refreshing
 }
 
 // PostsPresenterOutputProtocol: Protocol that defines the methods the presenter can call on the ViewState

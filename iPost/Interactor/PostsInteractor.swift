@@ -21,7 +21,7 @@ protocol PostsInteractorInputProtocol {
 @MainActor
 protocol PostsInteractorOutputProtocol: AnyObject {
     func didFetchPosts(_ posts: [Post])
-    func didFetchUsers(_ users: [User])
+    func didFetchUsers(_ users: [User]) async
     func didCreatePost(_ post: Post)
     func onError(message: String)
     func didSelectUser(_ userId: UUID)
