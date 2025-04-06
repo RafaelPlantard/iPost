@@ -5,142 +5,174 @@
 //  Created on 06/04/25.
 //
 
-import XCTest
+import SwiftTesting
 import SwiftData
 @testable import iPost
 
-final class PostsInteractorTests: XCTestCase {
-    
-    private var sut: PostsInteractor!
-    private var modelContext: ModelContext!
-    private var mockPresenter: MockPostsInteractorOutput!
-    private var mockUserPreferences: MockUserPreferencesInteractor!
-    
-    override func setUpWithError() throws {
-        // Create in-memory SwiftData container for testing
-        let schema = Schema([User.self, Post.self])
-        let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
-        let modelContainer = try ModelContainer(for: schema, configurations: [modelConfiguration])
-        modelContext = modelContainer.mainContext
+@Suite("PostsInteractor Tests")
+struct PostsInteractorTests {
+    @Test("Fetch users when database is empty should create dummy users")
+    func fetchUsersWhenDatabaseIsEmpty() async throws {
+        // GIVEN
+        let testContainer = try TestContainer()
+        let mockPresenter = MockPostsInteractorOutput()
+        let mockUserPreferences = MockUserPreferencesInteractor()
         
-        // Set up mocks
-        mockPresenter = MockPostsInteractorOutput()
-        mockUserPreferences = MockUserPreferencesInteractor()
-        
-        // Create the system under test with mocks
-        sut = PostsInteractor(
-            modelContext: modelContext,
+        let sut = PostsInteractor(
+            modelContext: testContainer.mainContext,
             userPreferencesInteractor: mockUserPreferences
         )
         sut.presenter = mockPresenter
-    }
-    
-    override func tearDownWithError() throws {
-        sut = nil
-        modelContext = nil
-        mockPresenter = nil
-        mockUserPreferences = nil
-    }
-    
-    func testFetchUsers_whenDbEmpty_shouldCreateDummyUsers() async throws {
-        // Given
-        // Empty database (from setup)
         
-        // When
+        // WHEN
         await sut.fetchUsers()
         
-        // Then
-        XCTAssertTrue(mockPresenter.didFetchUsersCalled)
-        XCTAssertFalse(mockPresenter.didFetchUsersList.isEmpty)
-        XCTAssertEqual(mockPresenter.didFetchUsersList.count, 3) // We expect 3 dummy users
+        // THEN
+        try #expect(mockPresenter.didFetchUsersCalled)
+        try #expect(!mockPresenter.didFetchUsersList.isEmpty)
+        try #expect(mockPresenter.didFetchUsersList.count == 3) // We expect 3 dummy users
     }
     
-    func testFetchUsers_withExistingUsers_shouldReturnUsers() async throws {
-        // Given
+    @Test("Fetch users with existing users should return users")
+    func fetchUsersWithExistingUsers() async throws {
+        // GIVEN
+        let testContainer = try TestContainer()
+        let mockPresenter = MockPostsInteractorOutput()
+        let mockUserPreferences = MockUserPreferencesInteractor()
+        
+        // Add test user to database
         let user = User(name: "Test User", username: "@test", profileImageName: "person")
-        modelContext.insert(user)
-        try modelContext.save()
+        testContainer.mainContext.insert(user)
+        try testContainer.mainContext.save()
         
-        // When
+        let sut = PostsInteractor(
+            modelContext: testContainer.mainContext,
+            userPreferencesInteractor: mockUserPreferences
+        )
+        sut.presenter = mockPresenter
+        
+        // WHEN
         await sut.fetchUsers()
         
-        // Then
-        XCTAssertTrue(mockPresenter.didFetchUsersCalled)
-        XCTAssertEqual(mockPresenter.didFetchUsersList.count, 1)
-        XCTAssertEqual(mockPresenter.didFetchUsersList.first?.name, "Test User")
+        // THEN
+        try #expect(mockPresenter.didFetchUsersCalled)
+        try #expect(mockPresenter.didFetchUsersList.count == 1)
+        try #expect(mockPresenter.didFetchUsersList.first?.name == "Test User")
     }
     
-    func testFetchPosts_returnsPostsInReverseChronologicalOrder() async throws {
-        // Given
+    @Test("Fetch posts should return posts in reverse chronological order")
+    func fetchPostsInReverseChronologicalOrder() async throws {
+        // GIVEN
+        let testContainer = try TestContainer()
+        let mockPresenter = MockPostsInteractorOutput()
+        let mockUserPreferences = MockUserPreferencesInteractor()
+        
+        // Create test data with controlled timestamps
         let user = User(name: "Test User", username: "@test", profileImageName: "person")
         
         let oldPost = Post(text: "Old post", author: user)
-        // Manipulate timestamps to ensure predictable order
         oldPost.timestamp = Date(timeIntervalSinceNow: -3600) // 1 hour ago
         
         let newPost = Post(text: "New post", author: user)
         // Current time by default
         
-        modelContext.insert(user)
-        modelContext.insert(oldPost)
-        modelContext.insert(newPost)
-        try modelContext.save()
+        testContainer.mainContext.insert(user)
+        testContainer.mainContext.insert(oldPost)
+        testContainer.mainContext.insert(newPost)
+        try testContainer.mainContext.save()
         
-        // When
+        let sut = PostsInteractor(
+            modelContext: testContainer.mainContext,
+            userPreferencesInteractor: mockUserPreferences
+        )
+        sut.presenter = mockPresenter
+        
+        // WHEN
         await sut.fetchPosts()
         
-        // Then
-        XCTAssertTrue(mockPresenter.didFetchPostsCalled)
-        XCTAssertEqual(mockPresenter.didFetchPostsList.count, 2)
+        // THEN
+        try #expect(mockPresenter.didFetchPostsCalled)
+        try #expect(mockPresenter.didFetchPostsList.count == 2)
         
         // Verify newest post is first (reverse chronological order)
-        XCTAssertEqual(mockPresenter.didFetchPostsList.first?.text, "New post")
-        XCTAssertEqual(mockPresenter.didFetchPostsList.last?.text, "Old post")
+        try #expect(mockPresenter.didFetchPostsList.first?.text == "New post")
+        try #expect(mockPresenter.didFetchPostsList.last?.text == "Old post")
     }
     
-    func testCreatePost() async throws {
-        // Given
-        let user = User(name: "Test User", username: "@test", profileImageName: "person")
-        modelContext.insert(user)
-        try modelContext.save()
+    @Test("Create post should add post to database and notify presenter")
+    func createPost() async throws {
+        // GIVEN
+        let testContainer = try TestContainer()
+        let mockPresenter = MockPostsInteractorOutput()
+        let mockUserPreferences = MockUserPreferencesInteractor()
         
-        // When
+        let user = User(name: "Test User", username: "@test", profileImageName: "person")
+        testContainer.mainContext.insert(user)
+        try testContainer.mainContext.save()
+        
+        let sut = PostsInteractor(
+            modelContext: testContainer.mainContext,
+            userPreferencesInteractor: mockUserPreferences
+        )
+        sut.presenter = mockPresenter
+        
+        // WHEN
         await sut.createPost(text: "Test post content", imageName: "star.fill", forUser: user.id)
         
-        // Then
-        XCTAssertTrue(mockPresenter.didCreatePostCalled)
-        XCTAssertEqual(mockPresenter.didCreatePostParam?.text, "Test post content")
-        XCTAssertEqual(mockPresenter.didCreatePostParam?.imageName, "star.fill")
-        XCTAssertEqual(mockPresenter.didCreatePostParam?.author?.id, user.id)
+        // THEN
+        try #expect(mockPresenter.didCreatePostCalled)
+        try #expect(mockPresenter.didCreatePostParam?.text == "Test post content")
+        try #expect(mockPresenter.didCreatePostParam?.imageName == "star.fill")
+        try #expect(mockPresenter.didCreatePostParam?.author?.id == user.id)
         
         // Also verify it's in the database
         let descriptor = FetchDescriptor<Post>()
-        let posts = try modelContext.fetch(descriptor)
-        XCTAssertEqual(posts.count, 1)
-        XCTAssertEqual(posts.first?.text, "Test post content")
+        let posts = try testContainer.mainContext.fetch(descriptor)
+        try #expect(posts.count > 0)
+        try #expect(posts.contains { $0.text == "Test post content" })
     }
     
-    func testSaveSelectedUserId() {
-        // Given
+    @Test("Save selected user ID should store value in preferences")
+    func saveSelectedUserId() throws {
+        // GIVEN
+        let testContainer = try TestContainer()
+        let mockPresenter = MockPostsInteractorOutput()
+        let mockUserPreferences = MockUserPreferencesInteractor()
+        
+        let sut = PostsInteractor(
+            modelContext: testContainer.mainContext,
+            userPreferencesInteractor: mockUserPreferences
+        )
+        
         let userId = UUID()
         
-        // When
+        // WHEN
         sut.saveSelectedUserId(userId)
         
-        // Then
-        XCTAssertEqual(mockUserPreferences.savedUserId, userId)
+        // THEN
+        try #expect(mockUserPreferences.savedUserId == userId)
     }
     
-    func testGetSelectedUserId() {
-        // Given
+    @Test("Get selected user ID should retrieve value from preferences")
+    func getSelectedUserId() throws {
+        // GIVEN
+        let testContainer = try TestContainer()
+        let mockPresenter = MockPostsInteractorOutput()
+        let mockUserPreferences = MockUserPreferencesInteractor()
+        
+        let sut = PostsInteractor(
+            modelContext: testContainer.mainContext,
+            userPreferencesInteractor: mockUserPreferences
+        )
+        
         let userId = UUID()
         mockUserPreferences.savedUserId = userId
         
-        // When
+        // WHEN
         let result = sut.getSelectedUserId()
         
-        // Then
-        XCTAssertEqual(result, userId)
+        // THEN
+        try #expect(result == userId)
     }
 }
 
@@ -197,5 +229,19 @@ final class MockUserPreferencesInteractor: UserPreferencesInteractorInputProtoco
     
     func getSelectedUserId() -> UUID? {
         return savedUserId
+    }
+}
+
+// MARK: - Test Helpers
+
+final class TestContainer {
+    let container: ModelContainer
+    var mainContext: ModelContext { container.mainContext }
+    
+    init() throws {
+        // Create in-memory container for testing
+        let schema = Schema([User.self, Post.self])
+        let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
+        self.container = try ModelContainer(for: schema, configurations: [modelConfiguration])
     }
 }

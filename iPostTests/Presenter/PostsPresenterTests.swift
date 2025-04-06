@@ -5,176 +5,201 @@
 //  Created on 06/04/25.
 //
 
-import XCTest
+import SwiftTesting
 @testable import iPost
 
-final class PostsPresenterTests: XCTestCase {
-    
-    private var sut: PostsPresenter!
-    private var mockInteractor: MockPostsInteractor!
-    private var mockRouter: MockPostsRouter!
-    private var mockViewState: MockPostsViewState!
-    
-    override func setUpWithError() throws {
-        // Create mocks
-        mockInteractor = MockPostsInteractor()
-        mockRouter = MockPostsRouter()
-        mockViewState = MockPostsViewState()
+@MainActor
+@Suite("PostsPresenter Tests")
+struct PostsPresenterTests {
+
+    @Test("viewDidLoad should call fetchUsers on interactor")
+    func viewDidLoadCallsFetchUsers() async throws {
+        // GIVEN
+        let mockInteractor = MockPostsInteractor()
+        let mockRouter = MockPostsRouter()
+        let mockViewState = MockPostsViewState()
         
-        // Create system under test
-        sut = PostsPresenter(interactor: mockInteractor, router: mockRouter)
+        let sut = PostsPresenter(interactor: mockInteractor, router: mockRouter)
         sut.viewState = mockViewState
-    }
-    
-    override func tearDownWithError() throws {
-        sut = nil
-        mockInteractor = nil
-        mockRouter = nil
-        mockViewState = nil
-    }
-    
-    @MainActor
-    func testViewDidLoad_callsFetchUsers() async {
-        // When
+        
+        // WHEN
         sut.viewDidLoad()
         
-        // Wait a bit for async tasks to complete
-        let expectation = expectation(description: "Wait for async calls")
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-            expectation.fulfill()
-        }
-        await fulfillment(of: [expectation], timeout: 1.0)
+        // Wait for async tasks to complete
+        try await Task.sleep(for: .milliseconds(200))
         
-        // Then
-        XCTAssertTrue(mockInteractor.fetchUsersCalled)
+        // THEN
+        try #expect(mockInteractor.fetchUsersCalled)
     }
     
-    @MainActor
-    func testCreatePost_withNoSelectedUser_showsError() {
-        // Given
+    @Test("createPost with no selected user should show error")
+    func createPostWithNoSelectedUserShowsError() throws {
+        // GIVEN
+        let mockInteractor = MockPostsInteractor()
+        let mockRouter = MockPostsRouter()
+        let mockViewState = MockPostsViewState()
+        
+        let sut = PostsPresenter(interactor: mockInteractor, router: mockRouter)
+        sut.viewState = mockViewState
         sut.selectedUserId = nil
         
-        // When
+        // WHEN
         sut.createPost(text: "Test post", imageName: nil)
         
-        // Then
-        XCTAssertTrue(mockViewState.showErrorCalled)
-        XCTAssertEqual(mockViewState.errorMessage, "Please select a user first")
-        XCTAssertFalse(mockInteractor.createPostCalled)
+        // THEN
+        try #expect(mockViewState.showErrorCalled)
+        try #expect(mockViewState.errorMessage == "Please select a user first")
+        try #expect(!mockInteractor.createPostCalled)
     }
     
-    @MainActor
-    func testCreatePost_withSelectedUser_callsInteractor() async {
-        // Given
+    @Test("createPost with selected user should call interactor")
+    func createPostWithSelectedUserCallsInteractor() async throws {
+        // GIVEN
+        let mockInteractor = MockPostsInteractor()
+        let mockRouter = MockPostsRouter()
+        let mockViewState = MockPostsViewState()
+        
+        let sut = PostsPresenter(interactor: mockInteractor, router: mockRouter)
+        sut.viewState = mockViewState
+        
         let userId = UUID()
         sut.selectedUserId = userId
         
-        // When
+        // WHEN
         sut.createPost(text: "Test post", imageName: "image.name")
         
-        // Wait a bit for async tasks to complete
-        let expectation = expectation(description: "Wait for async calls")
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-            expectation.fulfill()
-        }
-        await fulfillment(of: [expectation], timeout: 1.0)
+        // Wait for async tasks to complete
+        try await Task.sleep(for: .milliseconds(200))
         
-        // Then
-        XCTAssertTrue(mockViewState.showToastCalled)
-        XCTAssertEqual(mockViewState.toastMessage, "Creating post...")
-        XCTAssertEqual(mockViewState.toastType, .info)
+        // THEN
+        try #expect(mockViewState.showToastCalled)
+        try #expect(mockViewState.toastMessage == "Creating post...")
+        try #expect(mockViewState.toastType == .info)
         
-        XCTAssertTrue(mockInteractor.createPostCalled)
-        XCTAssertEqual(mockInteractor.createPostText, "Test post")
-        XCTAssertEqual(mockInteractor.createPostImageName, "image.name")
-        XCTAssertEqual(mockInteractor.createPostUserId, userId)
+        try #expect(mockInteractor.createPostCalled)
+        try #expect(mockInteractor.createPostText == "Test post")
+        try #expect(mockInteractor.createPostImageName == "image.name")
+        try #expect(mockInteractor.createPostUserId == userId)
     }
     
-    @MainActor
-    func testSelectUser_updatesSelectedUserId() {
-        // Given
+    @Test("selectUser should update selectedUserId and notify viewState")
+    func selectUserUpdatesSelectedUserId() throws {
+        // GIVEN
+        let mockInteractor = MockPostsInteractor()
+        let mockRouter = MockPostsRouter()
+        let mockViewState = MockPostsViewState()
+        
+        let sut = PostsPresenter(interactor: mockInteractor, router: mockRouter)
+        sut.viewState = mockViewState
+        
         let userId = UUID()
         
-        // When
+        // WHEN
         sut.selectUser(id: userId)
         
-        // Then
-        XCTAssertEqual(sut.selectedUserId, userId)
-        XCTAssertTrue(mockViewState.updateSelectedUserCalled)
-        XCTAssertEqual(mockViewState.selectedUserId, userId)
-        XCTAssertTrue(mockInteractor.saveSelectedUserIdCalled)
-        XCTAssertEqual(mockInteractor.savedUserId, userId)
+        // THEN
+        try #expect(sut.selectedUserId == userId)
+        try #expect(mockViewState.updateSelectedUserCalled)
+        try #expect(mockViewState.selectedUserId == userId)
+        try #expect(mockInteractor.saveSelectedUserIdCalled)
+        try #expect(mockInteractor.savedUserId == userId)
     }
     
-    @MainActor
-    func testDidFetchPosts_updatesViewState() {
-        // Given
+    @Test("didFetchPosts should update viewState with posts")
+    func didFetchPostsUpdatesViewState() throws {
+        // GIVEN
+        let mockInteractor = MockPostsInteractor()
+        let mockRouter = MockPostsRouter()
+        let mockViewState = MockPostsViewState()
+        
+        let sut = PostsPresenter(interactor: mockInteractor, router: mockRouter)
+        sut.viewState = mockViewState
+        
         let user = User(name: "Test User", username: "@test", profileImageName: "person")
         let posts = [
             Post(text: "Post 1", author: user),
             Post(text: "Post 2", author: user)
         ]
         
-        // When
+        // WHEN
         sut.didFetchPosts(posts)
         
-        // Then
-        XCTAssertTrue(mockViewState.updatePostsCalled)
-        XCTAssertEqual(mockViewState.posts.count, 2)
-        XCTAssertEqual(mockViewState.posts[0].text, "Post 1")
-        XCTAssertEqual(mockViewState.posts[1].text, "Post 2")
+        // THEN
+        try #expect(mockViewState.updatePostsCalled)
+        try #expect(mockViewState.posts.count == 2)
+        try #expect(mockViewState.posts[0].text == "Post 1")
+        try #expect(mockViewState.posts[1].text == "Post 2")
     }
     
-    @MainActor
-    func testDidFetchUsers_updatesViewState() {
-        // Given
+    @Test("didFetchUsers should update viewState with users")
+    func didFetchUsersUpdatesViewState() throws {
+        // GIVEN
+        let mockInteractor = MockPostsInteractor()
+        let mockRouter = MockPostsRouter()
+        let mockViewState = MockPostsViewState()
+        
+        let sut = PostsPresenter(interactor: mockInteractor, router: mockRouter)
+        sut.viewState = mockViewState
+        
         let users = [
             User(name: "User 1", username: "@user1", profileImageName: "person.1"),
             User(name: "User 2", username: "@user2", profileImageName: "person.2")
         ]
         
-        // When
+        // WHEN
         sut.didFetchUsers(users)
         
-        // Then
-        XCTAssertTrue(mockViewState.updateUsersCalled)
-        XCTAssertEqual(mockViewState.users.count, 2)
-        XCTAssertEqual(mockViewState.users[0].name, "User 1")
-        XCTAssertEqual(mockViewState.users[1].name, "User 2")
+        // THEN
+        try #expect(mockViewState.updateUsersCalled)
+        try #expect(mockViewState.users.count == 2)
+        try #expect(mockViewState.users[0].name == "User 1")
+        try #expect(mockViewState.users[1].name == "User 2")
     }
     
-    @MainActor
-    func testDidCreatePost_notifiesViewState() async {
-        // Given
+    @Test("didCreatePost should notify viewState and show success toast")
+    func didCreatePostNotifiesViewState() async throws {
+        // GIVEN
+        let mockInteractor = MockPostsInteractor()
+        let mockRouter = MockPostsRouter()
+        let mockViewState = MockPostsViewState()
+        
+        let sut = PostsPresenter(interactor: mockInteractor, router: mockRouter)
+        sut.viewState = mockViewState
+        
         let user = User(name: "Test User", username: "@test", profileImageName: "person")
         let post = Post(text: "New post", author: user)
         
-        // When
+        // WHEN
         sut.didCreatePost(post)
         
-        // Then
-        XCTAssertTrue(mockViewState.postCreatedCalled)
+        // THEN - First check if postCreated was called
+        try #expect(mockViewState.postCreatedCalled)
         
-        // Wait a bit for the async toast display
-        let expectation = expectation(description: "Wait for async toast")
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-            expectation.fulfill()
-        }
-        await fulfillment(of: [expectation], timeout: 1.0)
+        // Wait for the async toast display
+        try await Task.sleep(for: .milliseconds(500))
         
-        XCTAssertTrue(mockViewState.showToastCalled)
-        XCTAssertEqual(mockViewState.toastMessage, "Post created successfully!")
-        XCTAssertEqual(mockViewState.toastType, .success)
+        // Then check toast was displayed
+        try #expect(mockViewState.showToastCalled)
+        try #expect(mockViewState.toastMessage == "Post created successfully!")
+        try #expect(mockViewState.toastType == .success)
     }
     
-    @MainActor
-    func testOnError_showsErrorInViewState() {
-        // When
+    @Test("onError should show error in viewState")
+    func onErrorShowsErrorInViewState() throws {
+        // GIVEN
+        let mockInteractor = MockPostsInteractor()
+        let mockRouter = MockPostsRouter()
+        let mockViewState = MockPostsViewState()
+        
+        let sut = PostsPresenter(interactor: mockInteractor, router: mockRouter)
+        sut.viewState = mockViewState
+        
+        // WHEN
         sut.onError(message: "Test error")
         
-        // Then
-        XCTAssertTrue(mockViewState.showErrorCalled)
-        XCTAssertEqual(mockViewState.errorMessage, "Test error")
+        // THEN
+        try #expect(mockViewState.showErrorCalled)
+        try #expect(mockViewState.errorMessage == "Test error")
     }
 }
 
