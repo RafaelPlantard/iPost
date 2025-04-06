@@ -3,7 +3,7 @@
 <plist version="1.0">
 <dict>
 	<key>aps-environment</key>
-	<string>development</string>
+	<string>Production</string>
 	<key>com.apple.developer.icloud-container-identifiers</key>
 	<array>
 		<string>iCloud.io.swift-yah.iPost</string>
@@ -17,6 +17,6 @@
 	<key>com.apple.security.files.user-selected.read-only</key>
 	<true/>
     <key>com.apple.developer.icloud-container-environment</key>
-    <string>development</string>
+    <string>Production</string>
 </dict>
 </plist>
