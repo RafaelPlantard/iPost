@@ -38,9 +38,18 @@ final class CreatePostViewState: ObservableObject, PostsPresenterOutputProtocol 
         self.dismiss = dismiss
         
         // Initialize with data from presenter
-        self.users = presenter.users
-        self.selectedUserId = presenter.selectedUserId
-        self.selectedUser = presenter.users.first(where: { $0.id == presenter.selectedUserId })
+        if let concretePresenter = presenter as? PostsPresenter {
+            // This approach gives us access to concrete presenter properties
+            // but maintains protocol boundaries in the rest of the code
+            self.users = concretePresenter.users
+            self.selectedUserId = concretePresenter.selectedUserId
+            self.selectedUser = concretePresenter.users.first(where: { $0.id == concretePresenter.selectedUserId })
+        } else {
+            // Fallback if we don't have direct access to concrete presenter
+            self.users = presenter.users
+            self.selectedUserId = presenter.selectedUserId
+            self.selectedUser = presenter.users.first(where: { $0.id == presenter.selectedUserId })
+        }
     }
     
     // MARK: - User actions
@@ -98,10 +107,10 @@ final class CreatePostViewState: ObservableObject, PostsPresenterOutputProtocol 
         // Not needed in this view
     }
     
-    func updateUsers(_ users: [User]) async {
-        await MainActor.run {
-            self.users = users
-        }
+    func updateUsers(_ users: [User]) {
+        // Since we're already on the MainActor (from protocol declaration)
+        // we can directly update the property
+        self.users = users
     }
     
     func updateSelectedUser(id: UUID?) {

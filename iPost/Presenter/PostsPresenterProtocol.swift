@@ -11,6 +11,7 @@ import Foundation
 @MainActor
 protocol PostsPresenterInputProtocol: AnyObject {
     var selectedUserId: UUID? { get }
+    var users: [User] { get }
     
     func viewDidLoad()
     func createPost(text: String, imageName: String?) async

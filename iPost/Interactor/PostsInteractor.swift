@@ -123,7 +123,7 @@ final class PostsInteractor: PostsInteractorInputProtocol {
             if users.isEmpty {
                 await setupDummyUsers()
             } else {
-                presenter?.didFetchUsers(users)
+                await presenter?.didFetchUsers(users)
                 
                 // Check if there's a saved user selection
                 if let savedUserId = getSelectedUserId() {
@@ -176,7 +176,7 @@ final class PostsInteractor: PostsInteractorInputProtocol {
             // Fetch users to update presenter
             let descriptor = FetchDescriptor<User>()
             let fetchedUsers = try modelContext.fetch(descriptor)
-            presenter?.didFetchUsers(fetchedUsers)
+            await presenter?.didFetchUsers(fetchedUsers)
             
             // Fetch posts after users
             await fetchPosts()
