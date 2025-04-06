@@ -32,78 +32,214 @@ struct CreatePostView: View {
 
     var body: some View {
         NavigationStack {
-            Form {
-                Section {
-                    // Post content
-                    TextField("What's on your mind?", text: $viewState.postText, axis: .vertical)
-                        .textFieldStyle(.plain)
-                        .frame(minHeight: 100, alignment: .topLeading)
-                }
+            ZStack {
+                // Background gradient
+                LinearGradient(
+                    colors: [Color(.systemBackground), Color(.systemGray6)],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+                .ignoresSafeArea()
 
-                Section("Add an image") {
-                    // Selected image preview
-                    if let imageName = viewState.selectedImageName {
-                        HStack {
-                            Spacer()
-                            VStack {
-                                Image(systemName: imageName)
-                                    .resizable()
-                                    .scaledToFit()
-                                    .frame(height: 150)
-                                    .foregroundColor(.accentColor)
+                ScrollView {
+                    VStack(spacing: 20) {
+                        // User information card
+                        HStack(spacing: 16) {
+                            // User profile image with gradient background
+                            ZStack {
+                                Circle()
+                                    .fill(LinearGradient(
+                                        colors: [.blue.opacity(0.7), .cyan],
+                                        startPoint: .topLeading,
+                                        endPoint: .bottomTrailing
+                                    ))
+                                    .frame(width: 50, height: 50)
 
-                                Button("Remove Image") {
-                                    viewState.removeImage()
+                                Image(systemName: viewState.selectedUser?.profileImageName ?? "person.circle")
+                                    .font(.title3)
+                                    .foregroundColor(.white)
+                            }
+
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(viewState.selectedUser?.name ?? "Select a user")
+                                    .font(.headline)
+                                    .fontWeight(.semibold)
+
+                                if let username = viewState.selectedUser?.username {
+                                    Text(username)
+                                        .font(.subheadline)
+                                        .foregroundColor(.secondary)
                                 }
-                                .foregroundColor(.red)
-                                .padding(.top, 8)
                             }
+
                             Spacer()
-                        }
-                    } else {
-                        Button(action: {
-                            viewState.showImagePickerView()
-                        }) {
-                            Label("Select an Image", systemImage: "photo.on.rectangle.angled")
-                        }
-                    }
-                }
 
-                // User information
-                Section("Posting as") {
-                    HStack {
-                        Image(systemName: viewState.selectedUser?.profileImageName ?? "person.circle")
-                            .font(.title2)
-                            .foregroundColor(.blue)
+                            // Post status indicator
+                            Text("Public")
+                                .font(.caption.weight(.medium))
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 6)
+                                .background(
+                                    Capsule()
+                                        .fill(Color(.systemGray5))
+                                )
+                                .foregroundColor(.secondary)
+                        }
+                        .padding(16)
+                        .background(
+                            RoundedRectangle(cornerRadius: 16)
+                                .fill(Color(.systemBackground))
+                                .shadow(color: .black.opacity(0.05), radius: 5, x: 0, y: 2)
+                        )
 
-                        VStack(alignment: .leading) {
-                            Text(viewState.selectedUser?.name ?? "Select a user")
+                        // Post content card
+                        VStack(alignment: .leading, spacing: 16) {
+                            Text("What's on your mind?")
                                 .font(.headline)
-                            if let username = viewState.selectedUser?.username {
-                                Text(username)
-                                    .font(.subheadline)
-                                    .foregroundColor(.gray)
+                                .foregroundColor(.secondary)
+                                .padding(.horizontal, 4)
+
+                            // Text input area
+                            TextEditor(text: $viewState.postText)
+                                .frame(minHeight: 120)
+                                .padding(12)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 12)
+                                        .fill(Color(.systemBackground))
+                                        .shadow(color: .black.opacity(0.05), radius: 3, x: 0, y: 1)
+                                )
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 12)
+                                        .stroke(Color.gray.opacity(0.2), lineWidth: 1)
+                                )
+                        }
+                        .padding(16)
+                        .background(
+                            RoundedRectangle(cornerRadius: 16)
+                                .fill(Color(.systemBackground))
+                                .shadow(color: .black.opacity(0.05), radius: 5, x: 0, y: 2)
+                        )
+
+                        // Image selection card
+                        VStack(alignment: .leading, spacing: 16) {
+                            Text("Add an image")
+                                .font(.headline)
+                                .foregroundColor(.secondary)
+                                .padding(.horizontal, 4)
+
+                            // Selected image preview or selection button
+                            if let imageName = viewState.selectedImageName {
+                                VStack(spacing: 12) {
+                                    ZStack {
+                                        RoundedRectangle(cornerRadius: 12)
+                                            .fill(Color(.secondarySystemBackground))
+
+                                        Image(systemName: imageName)
+                                            .resizable()
+                                            .aspectRatio(contentMode: .fit)
+                                            .padding(16)
+                                            .foregroundStyle(
+                                                LinearGradient(
+                                                    colors: [.blue, .cyan],
+                                                    startPoint: .topLeading,
+                                                    endPoint: .bottomTrailing
+                                                )
+                                            )
+                                    }
+                                    .frame(height: 200)
+                                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                                    .shadow(color: .black.opacity(0.1), radius: 5, x: 0, y: 2)
+
+                                    Button(action: {
+                                        viewState.removeImage()
+                                    }) {
+                                        Label("Remove Image", systemImage: "trash")
+                                            .font(.subheadline.weight(.medium))
+                                            .padding(.vertical, 10)
+                                            .padding(.horizontal, 16)
+                                            .background(
+                                                Capsule()
+                                                    .fill(Color(.systemRed).opacity(0.1))
+                                            )
+                                            .foregroundColor(.red)
+                                    }
+                                }
+                            } else {
+                                Button(action: {
+                                    viewState.showImagePickerView()
+                                }) {
+                                    HStack {
+                                        Image(systemName: "photo.on.rectangle.angled")
+                                            .font(.title2)
+                                            .foregroundStyle(
+                                                LinearGradient(
+                                                    colors: [.blue, .cyan],
+                                                    startPoint: .topLeading,
+                                                    endPoint: .bottomTrailing
+                                                )
+                                            )
+
+                                        Text("Select an Image")
+                                            .font(.headline)
+                                            .foregroundColor(.primary)
+                                    }
+                                    .frame(maxWidth: .infinity)
+                                    .padding(.vertical, 20)
+                                    .background(
+                                        RoundedRectangle(cornerRadius: 12)
+                                            .fill(Color(.secondarySystemBackground))
+                                            .shadow(color: .black.opacity(0.05), radius: 3, x: 0, y: 1)
+                                    )
+                                }
                             }
                         }
+                        .padding(16)
+                        .background(
+                            RoundedRectangle(cornerRadius: 16)
+                                .fill(Color(.systemBackground))
+                                .shadow(color: .black.opacity(0.05), radius: 5, x: 0, y: 2)
+                        )
+
+                        // Post button
+                        Button(action: {
+                            viewState.createPost()
+                        }) {
+                            Text("Post")
+                                .font(.headline)
+                                .fontWeight(.bold)
+                                .foregroundColor(.white)
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 16)
+                                .background(
+                                    Capsule()
+                                        .fill(
+                                            LinearGradient(
+                                                colors: viewState.postText.isEmpty || viewState.selectedUserId == nil ?
+                                                    [Color.gray.opacity(0.5), Color.gray.opacity(0.6)] :
+                                                    [.blue, .cyan],
+                                                startPoint: .leading,
+                                                endPoint: .trailing
+                                            )
+                                        )
+                                        .shadow(color: .blue.opacity(0.3), radius: 5, x: 0, y: 3)
+                                )
+                        }
+                        .disabled(viewState.postText.isEmpty || viewState.selectedUserId == nil)
                     }
+                    .padding(16)
                 }
             }
             .navigationTitle("Create Post")
-            .navigationBarTitleDisplayMode(.inline)
-            // No need for onAppear - ViewState is initialized with presenter data
+            .navigationBarTitleDisplayMode(.large)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
-                    Button("Cancel") {
+                    Button(action: {
                         viewState.dismissView()
+                    }) {
+                        Text("Cancel")
+                            .fontWeight(.medium)
+                            .foregroundColor(.secondary)
                     }
-                }
-
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Post") {
-                        viewState.createPost()
-                    }
-                    .disabled(viewState.postText.isEmpty || viewState.selectedUserId == nil)
-                    .bold()
                 }
             }
             .sheet(isPresented: $viewState.showImagePicker) {
@@ -114,34 +250,110 @@ struct CreatePostView: View {
 
     private var imagePicker: some View {
         NavigationStack {
-            ScrollView {
-                LazyVGrid(columns: [GridItem(.adaptive(minimum: 100))], spacing: 20) {
-                    ForEach(availableImages, id: \.self) { imageName in
-                        VStack {
-                            Image(systemName: imageName)
-                                .resizable()
-                                .scaledToFit()
-                                .frame(height: 50)
-                                .padding()
-                                .background(Color.gray.opacity(0.1))
-                                .cornerRadius(8)
+            ZStack {
+                // Background gradient
+                LinearGradient(
+                    colors: [Color(.systemBackground), Color(.systemGray6)],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+                .ignoresSafeArea()
 
-                            Text(imageName)
-                                .font(.caption)
+                VStack(spacing: 16) {
+                    // Search bar (non-functional but adds visual appeal)
+                    HStack {
+                        Image(systemName: "magnifyingglass")
+                            .foregroundColor(.secondary)
+
+                        Text("Search icons")
+                            .foregroundColor(.secondary)
+
+                        Spacer()
+                    }
+                    .padding(12)
+                    .background(
+                        RoundedRectangle(cornerRadius: 10)
+                            .fill(Color(.systemBackground))
+                            .shadow(color: .black.opacity(0.05), radius: 2, x: 0, y: 1)
+                    )
+                    .padding(.horizontal)
+
+                    // Category tabs (non-functional but adds visual appeal)
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 16) {
+                            ForEach(["All", "Recent", "Nature", "Tech", "Travel", "Food", "Sports"], id: \.self) { category in
+                                Text(category)
+                                    .font(.subheadline.weight(category == "All" ? .semibold : .regular))
+                                    .padding(.vertical, 8)
+                                    .padding(.horizontal, 16)
+                                    .background(
+                                        Capsule()
+                                            .fill(category == "All" ?
+                                                  LinearGradient(
+                                                    colors: [.blue.opacity(0.7), .cyan],
+                                                    startPoint: .leading,
+                                                    endPoint: .trailing
+                                                  ) :
+                                                  Color(.systemBackground)
+                                            )
+                                            .shadow(color: .black.opacity(0.05), radius: 2, x: 0, y: 1)
+                                    )
+                                    .foregroundColor(category == "All" ? .white : .primary)
+                            }
                         }
-                        .onTapGesture {
-                            viewState.selectImage(imageName)
+                        .padding(.horizontal)
+                    }
+
+                    // Grid of images
+                    ScrollView {
+                        LazyVGrid(columns: [GridItem(.adaptive(minimum: 100), spacing: 16)], spacing: 16) {
+                            ForEach(availableImages, id: \.self) { imageName in
+                                Button(action: {
+                                    viewState.selectImage(imageName)
+                                }) {
+                                    VStack(spacing: 8) {
+                                        ZStack {
+                                            RoundedRectangle(cornerRadius: 16)
+                                                .fill(Color(.systemBackground))
+                                                .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
+                                                .frame(height: 100)
+
+                                            Image(systemName: imageName)
+                                                .resizable()
+                                                .aspectRatio(contentMode: .fit)
+                                                .padding(20)
+                                                .foregroundStyle(
+                                                    LinearGradient(
+                                                        colors: [.blue, .cyan],
+                                                        startPoint: .topLeading,
+                                                        endPoint: .bottomTrailing
+                                                    )
+                                                )
+                                        }
+
+                                        Text(imageName)
+                                            .font(.caption)
+                                            .foregroundColor(.secondary)
+                                            .lineLimit(1)
+                                    }
+                                }
+                            }
                         }
+                        .padding()
                     }
                 }
-                .padding()
+                .padding(.top)
             }
             .navigationTitle("Select Image")
-            .navigationBarTitleDisplayMode(.inline)
+            .navigationBarTitleDisplayMode(.large)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Cancel") {
+                    Button(action: {
                         viewState.hideImagePickerView()
+                    }) {
+                        Text("Cancel")
+                            .fontWeight(.medium)
+                            .foregroundColor(.secondary)
                     }
                 }
             }
