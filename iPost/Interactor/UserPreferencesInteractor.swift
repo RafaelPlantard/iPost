@@ -7,11 +7,13 @@
 
 import Foundation
 
+@MainActor
 protocol UserPreferencesInteractorInputProtocol {
     func saveSelectedUserId(_ userId: UUID?)
     func getSelectedUserId() -> UUID?
 }
 
+@MainActor
 final class UserPreferencesInteractor: UserPreferencesInteractorInputProtocol {
     private let userIdKey = "selected_user_id"
     

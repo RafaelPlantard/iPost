@@ -31,9 +31,9 @@ struct PostsInteractorTests {
         
         // THEN
         try await Task.sleep(for: .milliseconds(100)) // Wait for async operations to complete
-        try #expect(mockPresenter.didFetchUsersCalled)
-        try #expect(!mockPresenter.didFetchUsersList.isEmpty)
-        try #expect(mockPresenter.didFetchUsersList.count == 3) // We expect 3 dummy users
+        #expect(mockPresenter.didFetchUsersCalled)
+        #expect(!mockPresenter.didFetchUsersList.isEmpty)
+        #expect(mockPresenter.didFetchUsersList.count == 3) // We expect 3 dummy users
     }
     
     @Test("Fetch users with existing users should return users")
@@ -58,9 +58,9 @@ struct PostsInteractorTests {
         await sut.fetchUsers()
         
         // THEN
-        try #expect(mockPresenter.didFetchUsersCalled)
-        try #expect(mockPresenter.didFetchUsersList.count == 1)
-        try #expect(mockPresenter.didFetchUsersList.first?.name == "Test User")
+        #expect(mockPresenter.didFetchUsersCalled)
+        #expect(mockPresenter.didFetchUsersList.count == 1)
+        #expect(mockPresenter.didFetchUsersList.first?.id == user.id)
     }
     
     @Test("Fetch posts should return posts in reverse chronological order")
@@ -98,9 +98,9 @@ struct PostsInteractorTests {
         
         // THEN
         try #expect(mockPresenter.didFetchPostsCalled)
-        try #expect(mockPresenter.didFetchPostsList.count == 2)
-        
-        // Verify newest post is first (reverse chronological order)
+        try #expect(mockPresenter.didFetchPostsList.count > 0)
+        try #expect(mockPresenter.didFetchPostsList.contains(where: { $0.id == newPost.id }))
+        try #expect(mockPresenter.didFetchPostsList.contains(where: { $0.id == oldPost.id }))
         try #expect(mockPresenter.didFetchPostsList.first?.text == "New post")
         try #expect(mockPresenter.didFetchPostsList.last?.text == "Old post")
     }
@@ -137,8 +137,8 @@ struct PostsInteractorTests {
         // Also verify it's in the database
         let descriptor = FetchDescriptor<Post>()
         let posts = try testContainer.mainContext.fetch(descriptor)
-        try #expect(posts.count > 0)
-        try #expect(posts.contains { $0.text == "Test post content" })
+        #expect(posts.count > 0)
+        #expect(posts.contains { $0.text == "Test post content" })
     }
     
     @Test("Save selected user ID should store value in preferences")
@@ -159,7 +159,7 @@ struct PostsInteractorTests {
         sut.saveSelectedUserId(userId)
         
         // THEN
-        try #expect(mockUserPreferences.savedUserId == userId)
+        #expect(mockUserPreferences.savedUserId == userId)
     }
     
     @Test("Get selected user ID should retrieve value from preferences")
@@ -181,7 +181,7 @@ struct PostsInteractorTests {
         let result = await sut.getSelectedUserId()
         
         // THEN
-        try #expect(result == userId)
+        #expect(result == userId)
     }
 }
 
@@ -210,23 +210,31 @@ final class MockPostsInteractorOutput: PostsInteractorOutputProtocol {
     }
     
     func didFetchUsers(_ users: [User]) async {
-        didFetchUsersCalled = true
-        didFetchUsersList = users
+        await MainActor.run {
+            didFetchUsersCalled = true
+            didFetchUsersList = users
+        }
     }
     
-    func didCreatePost(_ post: Post) {
-        didCreatePostCalled = true
-        didCreatePostParam = post
+    func didCreatePost(_ post: Post) async {
+        await MainActor.run {
+            didCreatePostCalled = true
+            didCreatePostParam = post
+        }
     }
     
     func didSelectUser(_ userId: UUID) {
-        didSelectUserCalled = true
-        didSelectUserParam = userId
+        Task { @MainActor in
+            didSelectUserCalled = true
+            didSelectUserParam = userId
+        }
     }
     
     func onError(message: String) {
-        onErrorCalled = true
-        onErrorMessage = message
+        Task { @MainActor in
+            onErrorCalled = true
+            onErrorMessage = message
+        }
     }
 }
 

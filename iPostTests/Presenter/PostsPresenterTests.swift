@@ -32,7 +32,7 @@ struct PostsPresenterTests {
         try await Task.sleep(for: .milliseconds(200))
         
         // THEN
-        try #expect(mockInteractor.fetchUsersCalled)
+        #expect(mockInteractor.fetchUsersCalled)
     }
     
     @Test("createPost with no selected user should show error")
@@ -49,9 +49,9 @@ struct PostsPresenterTests {
         await sut.createPost(text: "Test post", imageName: nil)
         
         // THEN
-        try #expect(mockViewState.showErrorCalled)
-        try #expect(mockViewState.errorMessage == "Please select a user first")
-        try #expect(!mockInteractor.createPostCalled)
+        #expect(mockViewState.showErrorCalled)
+        #expect(mockViewState.errorMessage == "Please select a user first")
+        #expect(!mockInteractor.createPostCalled)
     }
     
     @Test("createPost with selected user should call interactor")
@@ -100,11 +100,11 @@ struct PostsPresenterTests {
         await sut.selectUser(id: userId)
         
         // THEN
-        try #expect(sut.selectedUserId == userId)
-        try #expect(mockViewState.updateSelectedUserCalled)
-        try #expect(mockViewState.selectedUserId == userId)
-        try #expect(mockInteractor.saveSelectedUserIdCalled)
-        try #expect(mockInteractor.savedUserId == userId)
+        #expect(sut.selectedUserId == userId)
+        #expect(mockViewState.updateSelectedUserCalled)
+        #expect(mockViewState.selectedUserId == userId)
+        #expect(mockInteractor.saveSelectedUserIdCalled)
+        #expect(mockInteractor.savedUserId == userId)
     }
     
     @Test("didFetchPosts should update viewState with posts")
@@ -127,10 +127,10 @@ struct PostsPresenterTests {
         await sut.didFetchPosts(posts)
         
         // THEN
-        try #expect(mockViewState.updatePostsCalled)
-        try #expect(mockViewState.posts.count == 2)
-        try #expect(mockViewState.posts[0].text == "Post 1")
-        try #expect(mockViewState.posts[1].text == "Post 2")
+        #expect(mockViewState.updatePostsCalled)
+        #expect(mockViewState.posts.count == 2)
+        #expect(mockViewState.posts[0].text == "Post 1")
+        #expect(mockViewState.posts[1].text == "Post 2")
     }
     
     @Test("didFetchUsers should update viewState with users")
@@ -152,10 +152,10 @@ struct PostsPresenterTests {
         await sut.didFetchUsers(users)
         
         // THEN
-        try #expect(mockViewState.updateUsersCalled)
-        try #expect(mockViewState.users.count == 2)
-        try #expect(mockViewState.users[0].name == "User 1")
-        try #expect(mockViewState.users[1].name == "User 2")
+        #expect(mockViewState.updateUsersCalled)
+        #expect(mockViewState.users.count == 2)
+        #expect(mockViewState.users[0].name == "User 1")
+        #expect(mockViewState.users[1].name == "User 2")
     }
     
     @Test("didCreatePost should notify viewState and show success toast")
@@ -175,15 +175,15 @@ struct PostsPresenterTests {
         await sut.didCreatePost(post)
         
         // THEN - First check if postCreated was called
-        try #expect(mockViewState.postCreatedCalled)
+        #expect(mockViewState.postCreatedCalled)
         
         // Wait for the async toast display
-        try await Task.sleep(for: .milliseconds(500))
+        await Task.sleep(for: .milliseconds(500))
         
         // Then check toast was displayed
-        try #expect(mockViewState.showToastCalled)
-        try #expect(mockViewState.toastMessage == "Post created successfully!")
-        try #expect(mockViewState.toastType == .success)
+        #expect(mockViewState.showToastCalled)
+        #expect(mockViewState.toastMessage == "Post created successfully!")
+        #expect(mockViewState.toastType == .success)
     }
     
     @Test("onError should show error in viewState")
@@ -200,8 +200,8 @@ struct PostsPresenterTests {
         await sut.onError(message: "Test error")
         
         // THEN
-        try #expect(mockViewState.showErrorCalled)
-        try #expect(mockViewState.errorMessage == "Test error")
+        #expect(mockViewState.showErrorCalled)
+        #expect(mockViewState.errorMessage == "Test error")
     }
     
     @Test("fetchPosts should update isLoading state")
@@ -218,8 +218,8 @@ struct PostsPresenterTests {
         await sut.fetchPosts()
         
         // THEN
-        try #expect(mockViewState.isLoading)
-        try #expect(mockInteractor.fetchPostsCalled)
+        #expect(mockViewState.isLoading)
+        #expect(mockInteractor.fetchPostsCalled)
     }
 }
 
@@ -304,7 +304,7 @@ final class MockPostsViewState: PostsPresenterOutputProtocol {
         self.posts = posts
     }
     
-    func updateUsers(_ users: [User]) {
+    func updateUsers(_ users: [User]) async {
         updateUsersCalled = true
         self.users = users
     }
@@ -336,6 +336,7 @@ final class MockPostsViewState: PostsPresenterOutputProtocol {
     
     func didCreatePost(_ post: Post) {
         postCreatedCalled = true
+        didCreatePostParam = post
     }
     
     func didSelectUser(_ userId: UUID) {
@@ -344,7 +345,7 @@ final class MockPostsViewState: PostsPresenterOutputProtocol {
     }
     
     func onError(message: String) {
-        showErrorCalled = true
-        errorMessage = message
+        onErrorCalled = true
+        onErrorMessage = message
     }
 }
