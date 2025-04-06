@@ -19,19 +19,35 @@ protocol PostsModelActorProtocol: Actor {
 
 // Define a global actor for SwiftData operations
 @globalActor actor PostsModelActor: GlobalActor, PostsModelActorProtocol {
-    static let shared = PostsModelActor(modelContext: ModelContainer.makeForPreview().mainContext)
+    // We'll create this without a real ModelContext initially
+    // The real ModelContext will be set later via setModelContext
+    static let shared = PostsModelActor()
 
     // The ModelContext should only be accessed within this actor
-    private var modelContext: ModelContext
+    private var modelContext: ModelContext?
+
+    // Default initializer without ModelContext
+    init() {
+        self.modelContext = nil
+    }
 
     // Initialize with a ModelContext
     init(modelContext: ModelContext) {
         self.modelContext = modelContext
     }
 
+    // Method to set the ModelContext after initialization
+    func setModelContext(_ context: ModelContext) {
+        self.modelContext = context
+    }
+
     // MARK: - User Operations
 
     func fetchUser(withId id: UUID) async -> UserDTO? {
+        guard let modelContext = modelContext else {
+            print("ERROR: ModelContext not set in PostsModelActor")
+            return nil
+        }
 
         let descriptor = FetchDescriptor<User>(
             predicate: #Predicate { user in
@@ -43,22 +59,32 @@ protocol PostsModelActorProtocol: Actor {
             let users = try modelContext.fetch(descriptor)
             return users.first.map { UserDTO(from: $0) }
         } catch {
+            print("ERROR: Failed to fetch user: \(error.localizedDescription)")
             return nil
         }
     }
 
     func fetchUsers() async -> [UserDTO] {
+        guard let modelContext = modelContext else {
+            print("ERROR: ModelContext not set in PostsModelActor")
+            return []
+        }
 
         do {
             let descriptor = FetchDescriptor<User>()
             let users = try modelContext.fetch(descriptor)
             return users.map { UserDTO(from: $0) }
         } catch {
+            print("ERROR: Failed to fetch users: \(error.localizedDescription)")
             return []
         }
     }
 
     func setupDummyUsers() async -> [UserDTO] {
+        guard let modelContext = modelContext else {
+            print("ERROR: ModelContext not set in PostsModelActor")
+            return []
+        }
 
         // Create sample users with better profile images
         let users = [
@@ -90,6 +116,7 @@ protocol PostsModelActorProtocol: Actor {
             try modelContext.save()
             return users.map { UserDTO(from: $0) }
         } catch {
+            print("ERROR: Failed to setup dummy data: \(error.localizedDescription)")
             return []
         }
     }
@@ -97,6 +124,10 @@ protocol PostsModelActorProtocol: Actor {
     // MARK: - Post Operations
 
     func fetchPosts() async -> [PostDTO] {
+        guard let modelContext = modelContext else {
+            print("ERROR: ModelContext not set in PostsModelActor")
+            return []
+        }
 
         do {
             // Force SwiftData to process any pending changes first
@@ -117,11 +148,16 @@ protocol PostsModelActorProtocol: Actor {
             // Convert to DTOs for safe actor boundary crossing
             return posts.map { PostDTO(from: $0) }
         } catch {
+            print("ERROR: Failed to fetch posts: \(error.localizedDescription)")
             return []
         }
     }
 
     func createPost(text: String, imageName: String?, forUser userId: UUID) async -> PostDTO? {
+        guard let modelContext = modelContext else {
+            print("ERROR: ModelContext not set in PostsModelActor")
+            return nil
+        }
 
         let descriptor = FetchDescriptor<User>(
             predicate: #Predicate { user in
@@ -130,6 +166,7 @@ protocol PostsModelActorProtocol: Actor {
         )
 
         guard let user = try? modelContext.fetch(descriptor).first else {
+            print("ERROR: User not found with ID: \(userId)")
             return nil
         }
 
@@ -147,6 +184,7 @@ protocol PostsModelActorProtocol: Actor {
 
             return PostDTO(from: post)
         } catch {
+            print("ERROR: Failed to create post: \(error.localizedDescription)")
             return nil
         }
     }
