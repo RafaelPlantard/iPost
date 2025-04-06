@@ -211,17 +211,29 @@ struct CreatePostView: View {
                                 .frame(maxWidth: .infinity)
                                 .padding(.vertical, 16)
                                 .background(
-                                    Capsule()
-                                        .fill(
-                                            LinearGradient(
-                                                colors: viewState.postText.isEmpty || viewState.selectedUserId == nil ?
-                                                    [Color.gray.opacity(0.5), Color.gray.opacity(0.6)] :
-                                                    [.blue, .cyan],
-                                                startPoint: .leading,
-                                                endPoint: .trailing
-                                            )
-                                        )
-                                        .shadow(color: .blue.opacity(0.3), radius: 5, x: 0, y: 3)
+                                    Group {
+                                        if viewState.postText.isEmpty || viewState.selectedUserId == nil {
+                                            Capsule()
+                                                .fill(
+                                                    LinearGradient(
+                                                        colors: [Color.gray.opacity(0.5), Color.gray.opacity(0.6)],
+                                                        startPoint: .leading,
+                                                        endPoint: .trailing
+                                                    )
+                                                )
+                                                .shadow(color: .gray.opacity(0.3), radius: 5, x: 0, y: 3)
+                                        } else {
+                                            Capsule()
+                                                .fill(
+                                                    LinearGradient(
+                                                        colors: [.blue, .cyan],
+                                                        startPoint: .leading,
+                                                        endPoint: .trailing
+                                                    )
+                                                )
+                                                .shadow(color: .blue.opacity(0.3), radius: 5, x: 0, y: 3)
+                                        }
+                                    }
                                 )
                         }
                         .disabled(viewState.postText.isEmpty || viewState.selectedUserId == nil)
@@ -283,22 +295,29 @@ struct CreatePostView: View {
                         HStack(spacing: 16) {
                             ForEach(["All", "Recent", "Nature", "Tech", "Travel", "Food", "Sports"], id: \.self) { category in
                                 Text(category)
-                                    .font(.subheadline.weight(category == "All" ? .semibold : .regular))
+                                    .font(category == "All" ? .subheadline.weight(.semibold) : .subheadline.weight(.regular))
                                     .padding(.vertical, 8)
                                     .padding(.horizontal, 16)
                                     .background(
-                                        Capsule()
-                                            .fill(category == "All" ?
-                                                  LinearGradient(
-                                                    colors: [.blue.opacity(0.7), .cyan],
-                                                    startPoint: .leading,
-                                                    endPoint: .trailing
-                                                  ) :
-                                                  Color(.systemBackground)
-                                            )
-                                            .shadow(color: .black.opacity(0.05), radius: 2, x: 0, y: 1)
+                                        Group {
+                                            if category == "All" {
+                                                Capsule()
+                                                    .fill(
+                                                        LinearGradient(
+                                                            colors: [.blue.opacity(0.7), .cyan],
+                                                            startPoint: .leading,
+                                                            endPoint: .trailing
+                                                        )
+                                                    )
+                                                    .shadow(color: .black.opacity(0.05), radius: 2, x: 0, y: 1)
+                                            } else {
+                                                Capsule()
+                                                    .fill(Color(.systemBackground))
+                                                    .shadow(color: .black.opacity(0.05), radius: 2, x: 0, y: 1)
+                                            }
+                                        }
                                     )
-                                    .foregroundColor(category == "All" ? .white : .primary)
+                                    .foregroundStyle(category == "All" ? Color.white : Color.primary)
                             }
                         }
                         .padding(.horizontal)
