@@ -12,6 +12,18 @@ final class CreatePostViewState: ObservableObject, PostsPresenterOutputProtocol 
     // UI state properties
     @Published var postText: String = ""
     @Published var selectedImageName: String? = nil
+    @Published var isLoading: Bool = false {
+        willSet {
+            // Ensure UI updates happen on the main thread
+            if Thread.isMainThread {
+                objectWillChange.send()
+            } else {
+                DispatchQueue.main.async {
+                    self.objectWillChange.send()
+                }
+            }
+        }
+    }
     @Published var showImagePicker: Bool = false
     @Published var users: [User] = []
     @Published var selectedUserId: UUID? = nil
@@ -44,14 +56,17 @@ final class CreatePostViewState: ObservableObject, PostsPresenterOutputProtocol 
         let savedImageName = selectedImageName
         
         // Call the presenter to create the post
-        presenter?.createPost(text: savedText, imageName: savedImageName)
-        
-        // Clear the form
-        clearForm()
-        
-        // Dismiss the view
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-            self.dismiss?()
+        Task {
+            await presenter?.createPost(text: savedText, imageName: savedImageName)
+            
+            // Clear the form
+            clearForm()
+            
+            // Dismiss the view after a short delay to allow animations to complete
+            try? await Task.sleep(for: .milliseconds(300))
+            await MainActor.run {
+                self.dismiss?()
+            }
         }
     }
     
@@ -83,8 +98,10 @@ final class CreatePostViewState: ObservableObject, PostsPresenterOutputProtocol 
         // Not needed in this view
     }
     
-    func updateUsers(_ users: [User]) {
-        self.users = users
+    func updateUsers(_ users: [User]) async {
+        await MainActor.run {
+            self.users = users
+        }
     }
     
     func showError(message: String) {
@@ -96,8 +113,10 @@ final class CreatePostViewState: ObservableObject, PostsPresenterOutputProtocol 
     }
     
     func postCreated() {
-        clearForm()
-        dismiss?()
+        Task { @MainActor in
+            clearForm()
+            dismiss?()
+        }
     }
     
     // MARK: - State updates

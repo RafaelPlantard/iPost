@@ -68,8 +68,10 @@ struct PostsView: View {
                     }
                     .listStyle(.plain)
                     .refreshable {
-                        viewState.isLoading = true
-                        presenter.viewDidLoad()
+                        Task {
+                            viewState.isLoading = true
+                            await viewState.refreshPosts()
+                        }
                     }
                 }
             }
@@ -113,7 +115,9 @@ struct PostsView: View {
             Menu {
                 ForEach(viewState.users) { user in
                     Button(action: {
-                        viewState.selectUser(id: user.id)
+                        Task {
+                            await viewState.selectUser(id: user.id)
+                        }
                     }) {
                         HStack {
                             Image(systemName: user.profileImageName)

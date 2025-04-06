@@ -35,19 +35,19 @@ final class PostsViewState: ObservableObject, PostsPresenterOutputProtocol {
         presenter?.viewDidLoad()
     }
     
-    func refreshPosts() {
+    func refreshPosts() async {
         // Explicit refresh action
         isLoading = true
-        presenter?.fetchPosts()
+        await presenter?.fetchPosts()
     }
     
-    func selectUser(id: UUID) {
+    func selectUser(id: UUID) async {
         isLoading = true
-        presenter?.selectUser(id: id)
+        await presenter?.selectUser(id: id)
     }
     
-    func createPost(text: String, imageName: String?) {
-        presenter?.createPost(text: text, imageName: imageName)
+    func createPost(text: String, imageName: String?) async {
+        await presenter?.createPost(text: text, imageName: imageName)
     }
     
     func showCreatePost() {
@@ -85,9 +85,7 @@ final class PostsViewState: ObservableObject, PostsPresenterOutputProtocol {
     
     func showToast(message: String, type: ToastMessage.ToastType) {
         // Use the toast manager instead of managing toast state ourselves
-        Task {
-            await ToastManager.shared.show(message: message, type: type)
-        }
+        ToastManager.shared.show(message: message, type: type)
     }
     
     func postCreated() {
@@ -101,7 +99,7 @@ final class PostsViewState: ObservableObject, PostsPresenterOutputProtocol {
         // We do this after a short delay to ensure the sheet has time to dismiss
         Task {
             try? await Task.sleep(for: .milliseconds(200))
-            presenter?.viewDidLoad()
+            await presenter?.fetchPosts()
         }
     }
 }
