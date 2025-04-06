@@ -43,9 +43,11 @@ final class PostsRouter: PostsRouterProtocol {
 
     func makeCreatePostView() -> AnyView {
         // In a more complex app, we might pass dependencies here
-        guard let presenter = presenter as? PostsPresenter else {
+        guard let presentingPresenter = presenter else {
             return AnyView(Text("No presenter available"))
         }
-        return AnyView(CreatePostView(presenter: presenter))
+        
+        // Wrap the CreatePostView in a toast container
+        return AnyView(CreatePostView(presenter: presentingPresenter))
     }
 }

@@ -24,4 +24,5 @@ protocol PostsPresenterOutputProtocol {
     func showError(message: String)
     func postCreated()
     func selectedUserChanged(id: UUID?)
+    func showToast(message: String, type: ToastMessage.ToastType)
 }

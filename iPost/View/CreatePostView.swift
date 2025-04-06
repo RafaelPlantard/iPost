@@ -159,3 +159,30 @@ struct CreatePostView: View {
         // The presenter will handle closing this sheet after successful creation
     }
 }
+
+extension CreatePostView: PostsPresenterOutputProtocol {
+    func showPosts(_ posts: [Post]) {
+        // Not needed in this view
+    }
+
+    func showUsers(_ users: [User]) {
+        stateManager.users = users
+    }
+
+    func showError(message: String) {
+        // Handle error message if needed
+    }
+
+    func postCreated() {
+        dismiss()
+    }
+
+    func selectedUserChanged(id: UUID?) {
+        stateManager.selectedUserId = id
+        stateManager.selectedUser = stateManager.users.first(where: { $0.id == id })
+    }
+
+    func showToast(message: String, type: ToastMessage.ToastType) {
+        // Toast will be shown in the parent view
+    }
+}

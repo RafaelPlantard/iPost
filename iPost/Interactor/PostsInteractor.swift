@@ -14,6 +14,8 @@ protocol PostsInteractorInputProtocol {
     func createPost(text: String, imageName: String?, forUser userId: UUID)
     func fetchUsers()
     func setupDummyUsers()
+    func saveSelectedUserId(_ userId: UUID?)
+    func getSelectedUserId() -> UUID?
 }
 
 // PostsInteractorOutputProtocol: Protocol that defines the methods the interactor can call on the presenter
@@ -22,15 +24,18 @@ protocol PostsInteractorOutputProtocol: AnyObject {
     func didFetchUsers(_ users: [User])
     func didCreatePost(_ post: Post)
     func onError(message: String)
+    func didSelectUser(_ userId: UUID)
 }
 
 // MARK: - PostsInteractor
 class PostsInteractor {
     weak var presenter: PostsInteractorOutputProtocol?
     private var modelContext: ModelContext
+    private let userPreferencesInteractor: UserPreferencesInteractorInputProtocol
     
-    init(modelContext: ModelContext) {
+    init(modelContext: ModelContext, userPreferencesInteractor: UserPreferencesInteractorInputProtocol = UserPreferencesInteractor()) {
         self.modelContext = modelContext
+        self.userPreferencesInteractor = userPreferencesInteractor
     }
     
     private func fetchUser(withId id: UUID) -> User? {
@@ -52,6 +57,13 @@ class PostsInteractor {
 
 // MARK: - PostsInteractorInputProtocol
 extension PostsInteractor: PostsInteractorInputProtocol {
+    func saveSelectedUserId(_ userId: UUID?) {
+        userPreferencesInteractor.saveSelectedUserId(userId)
+    }
+    
+    func getSelectedUserId() -> UUID? {
+        return userPreferencesInteractor.getSelectedUserId()
+    }
     func fetchPosts() {
         do {
             let descriptor = FetchDescriptor<Post>(
@@ -90,6 +102,21 @@ extension PostsInteractor: PostsInteractorInputProtocol {
                 setupDummyUsers()
             } else {
                 presenter?.didFetchUsers(users)
+                
+                // Check if there's a saved user selection
+                if let savedUserId = getSelectedUserId() {
+                    if users.contains(where: { $0.id == savedUserId }) {
+                        presenter?.didSelectUser(savedUserId)
+                    } else if let firstUser = users.first {
+                        // Fallback to first user if saved user doesn't exist anymore
+                        saveSelectedUserId(firstUser.id)
+                        presenter?.didSelectUser(firstUser.id)
+                    }
+                } else if let firstUser = users.first {
+                    // Default to first user if none selected
+                    saveSelectedUserId(firstUser.id)
+                    presenter?.didSelectUser(firstUser.id)
+                }
             }
         } catch {
             presenter?.onError(message: "Failed to fetch users: \(error.localizedDescription)")

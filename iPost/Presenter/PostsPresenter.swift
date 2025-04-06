@@ -45,6 +45,8 @@ extension PostsPresenter: PostsPresenterInputProtocol {
         selectedUserId = id
         // Notify the view of the user change
         view?.selectedUserChanged(id: id)
+        // Save the selected user to persist between app launches
+        interactor.saveSelectedUserId(id)
         // When a user is selected, we might want to refresh the feed
         interactor.fetchPosts()
     }
@@ -52,6 +54,10 @@ extension PostsPresenter: PostsPresenterInputProtocol {
 
 // MARK: - PostsInteractorOutputProtocol
 extension PostsPresenter: PostsInteractorOutputProtocol {
+    func didSelectUser(_ userId: UUID) {
+        selectedUserId = userId
+        view?.selectedUserChanged(id: userId)
+    }
     func didFetchPosts(_ posts: [Post]) {
         self.posts = posts
         view?.showPosts(posts)
@@ -73,6 +79,8 @@ extension PostsPresenter: PostsInteractorOutputProtocol {
     func didCreatePost(_ post: Post) {
         // Refresh posts after creating a new one
         interactor.fetchPosts()
+        // Show success toast and close the create post screen
+        view?.showToast(message: "Post created successfully!", type: .success)
         view?.postCreated()
     }
     

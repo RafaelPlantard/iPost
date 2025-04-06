@@ -21,11 +21,13 @@ struct PostsView: View {
         @Published var selectedUserId: UUID? = nil
         @Published var errorMessage: String? = nil
         @Published var showingError: Bool = false
+        @Published var toast: ToastMessage? = nil
     }
     
     var body: some View {
         NavigationStack {
             VStack {
+            
                 // User dropdown selector at the top
                 if !stateManager.users.isEmpty {
                     userSelectionPicker
@@ -65,6 +67,7 @@ struct PostsView: View {
             .onAppear {
                 presenter.viewDidLoad()
             }
+            .toast(message: $stateManager.toast)
         }
     }
     
@@ -199,6 +202,10 @@ extension PostsView: PostsPresenterOutputProtocol {
     
     func selectedUserChanged(id: UUID?) {
         stateManager.selectedUserId = id
+    }
+    
+    func showToast(message: String, type: ToastMessage.ToastType) {
+        stateManager.toast = ToastMessage(message: message, type: type)
     }
 }
 
