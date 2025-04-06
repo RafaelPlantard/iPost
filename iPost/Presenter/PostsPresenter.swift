@@ -111,6 +111,9 @@ extension PostsPresenter: PostsInteractorOutputProtocol {
     func didCreatePost(_ post: Post) {
         print("DEBUG: PostsPresenter.didCreatePost called with post ID: \(post.id)")
 
+        // Notify the view state that a post was created
+        viewState?.postCreated()
+
         // Show the success toast
         viewState?.showToast(message: "Post created successfully!", type: .success)
 
