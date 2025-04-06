@@ -29,7 +29,7 @@ protocol PostsPresenterOutputProtocol {
 
 // MARK: - PostsPresenter
 final class PostsPresenter: ObservableObject {
-    weak var view: PostsPresenterOutputProtocol?
+    var view: PostsPresenterOutputProtocol?
     private let interactor: PostsInteractorInputProtocol
     private let router: PostsRouter
     
@@ -38,8 +38,7 @@ final class PostsPresenter: ObservableObject {
     @Published private(set) var posts: [Post] = []
     @Published private(set) var selectedUserId: UUID?
     
-    init(view: PostsPresenterOutputProtocol, interactor: PostsInteractorInputProtocol, router: PostsRouter) {
-        self.view = view
+    init(interactor: PostsInteractorInputProtocol, router: PostsRouter) {
         self.interactor = interactor
         self.router = router
     }

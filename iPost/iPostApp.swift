@@ -36,7 +36,8 @@ struct MainView: View {
     @Environment(\.modelContext) private var modelContext
     
     var body: some View {
-        let (view, presenter) = PostsRouter.createModule(modelContext: modelContext)
+        let (view, _) = PostsRouter.createModule(modelContext: modelContext)
+
         return view
     }
 }

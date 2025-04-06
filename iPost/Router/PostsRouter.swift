@@ -23,16 +23,18 @@ final class PostsRouter: PostsRouterProtocol {
         // Create interactor
         let interactor = PostsInteractor(modelContext: modelContext)
         
-        // Create view
+        // Create presenter first with a temporary dummy view implementation
+        let presenter = PostsPresenter(interactor: interactor, router: router)
+        
+        // Now create the real view with the presenter
         let view = PostsView(presenter: presenter)
         
-        // Create presenter and set dependencies
-        let presenter = PostsPresenter(view: view, interactor: interactor, router: router)
+        // Update presenter with the real view
+        presenter.view = view
         
         // Set presenter references
         router.presenter = presenter
         interactor.presenter = presenter
-        view.presenter = presenter
         
         return (AnyView(view), presenter)
     }
