@@ -14,8 +14,8 @@ protocol PostsInteractorInputProtocol {
     func fetchPosts() async
     func createPost(text: String, imageName: String?, forUser userId: UUID) async
     func fetchUsers() async
-    nonisolated func saveSelectedUserId(_ userId: UUID?)
-    nonisolated func getSelectedUserId() -> UUID?
+    func saveSelectedUserId(_ userId: UUID?)
+    func getSelectedUserId() -> UUID?
 }
 
 // PostsInteractorOutputProtocol: Protocol that defines the methods the interactor can call on the presenter
@@ -59,10 +59,12 @@ final class PostsInteractor: PostsInteractorInputProtocol {
         }
     }
     
+    @MainActor
     func saveSelectedUserId(_ userId: UUID?) {
         userPreferencesInteractor.saveSelectedUserId(userId)
     }
     
+    @MainActor
     func getSelectedUserId() -> UUID? {
         return userPreferencesInteractor.getSelectedUserId()
     }
