@@ -25,8 +25,11 @@ final class PostsRouter: PostsRouterProtocol {
         // Create user preferences interactor for persistence
         let userPreferencesInteractor = UserPreferencesInteractor()
 
-        // Create model actor for SwiftData operations
-        let modelActor = PostsModelActor(modelContext: modelContext)
+        // Get the model container from the context
+        let modelContainer = modelContext.container
+
+        // Create model actor for SwiftData operations using the container
+        let modelActor = PostsModelActor.shared(modelContainer: modelContainer)
 
         // Create main interactor with dependencies
         let interactor = PostsInteractor(modelActor: modelActor, userPreferencesInteractor: userPreferencesInteractor)

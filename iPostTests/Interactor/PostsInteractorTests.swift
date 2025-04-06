@@ -18,7 +18,8 @@ struct PostsInteractorTests {
         // GIVEN
         let mockPresenter = MockPostsInteractorOutput()
         let mockUserPreferences = MockUserPreferencesInteractor()
-        let mockModelActor = MockPostsModelActor()
+        let testContainer = try TestContainer()
+        let mockModelActor = MockPostsModelActor(modelContainer: testContainer.container)
 
         // Configure mock to return empty users list first time, then dummy users
         await mockModelActor.usersToReturn = []
@@ -44,7 +45,8 @@ struct PostsInteractorTests {
         // GIVEN
         let mockPresenter = MockPostsInteractorOutput()
         let mockUserPreferences = MockUserPreferencesInteractor()
-        let mockModelActor = MockPostsModelActor()
+        let testContainer = try TestContainer()
+        let mockModelActor = MockPostsModelActor(modelContainer: testContainer.container)
 
         // Configure mock to return test users
         let testUser = User(name: "Test User", username: "@test", profileImageName: "person")
@@ -72,7 +74,8 @@ struct PostsInteractorTests {
         // GIVEN
         let mockPresenter = MockPostsInteractorOutput()
         let mockUserPreferences = MockUserPreferencesInteractor()
-        let mockModelActor = MockPostsModelActor()
+        let testContainer = try TestContainer()
+        let mockModelActor = MockPostsModelActor(modelContainer: testContainer.container)
 
         // Create test data with controlled timestamps
         let user = User(name: "Test User", username: "@test", profileImageName: "person")
@@ -110,7 +113,8 @@ struct PostsInteractorTests {
         // GIVEN
         let mockPresenter = MockPostsInteractorOutput()
         let mockUserPreferences = MockUserPreferencesInteractor()
-        let mockModelActor = MockPostsModelActor()
+        let testContainer = try TestContainer()
+        let mockModelActor = MockPostsModelActor(modelContainer: testContainer.container)
 
         // Create test user
         let user = User(name: "Test User", username: "@test", profileImageName: "person")
