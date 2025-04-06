@@ -9,7 +9,7 @@ import Foundation
 import SwiftData
 
 @Model
-final class User: Sendable {
+final class User {
     var id: UUID = UUID()
     var name: String = ""
     var username: String = ""

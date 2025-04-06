@@ -9,7 +9,7 @@ import Foundation
 import SwiftData
 
 @Model
-final class Post: Sendable {
+final class Post {
     var id: UUID = UUID()
     var text: String = ""
     var imageName: String?

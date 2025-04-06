@@ -57,8 +57,23 @@ final class PostsInteractor: PostsInteractorInputProtocol, @unchecked Sendable {
         print("DEBUG: PostsInteractor.fetchPosts called")
 
         // Use the ModelActor to fetch posts safely
-        let posts = await modelActor.fetchPosts()
-        print("DEBUG: PostsInteractor.fetchPosts fetched \(posts.count) posts")
+        let postDTOs = await modelActor.fetchPosts()
+        print("DEBUG: PostsInteractor.fetchPosts fetched \(postDTOs.count) posts")
+
+        // Convert DTOs to model objects
+        let posts = postDTOs.map { dto -> Post in
+            let post = Post(text: dto.text, imageName: dto.imageName, timestamp: dto.timestamp)
+            post.id = dto.id
+
+            // If there's an author, create a User object
+            if let authorDTO = dto.author {
+                let author = User(name: authorDTO.name, username: authorDTO.username, profileImageName: authorDTO.profileImageName)
+                author.id = authorDTO.id
+                post.author = author
+            }
+
+            return post
+        }
 
         // Notify presenter with the fresh data
         print("DEBUG: PostsInteractor calling presenter?.didFetchPosts with \(posts.count) posts")
@@ -69,8 +84,19 @@ final class PostsInteractor: PostsInteractorInputProtocol, @unchecked Sendable {
         print("DEBUG: PostsInteractor.createPost called with userId: \(userId)")
 
         // Use the ModelActor to create a post safely
-        if let post = await modelActor.createPost(text: text, imageName: imageName, forUser: userId) {
-            print("DEBUG: PostsInteractor.createPost - Created post with ID: \(post.id)")
+        if let postDTO = await modelActor.createPost(text: text, imageName: imageName, forUser: userId) {
+            print("DEBUG: PostsInteractor.createPost - Created post with ID: \(postDTO.id)")
+
+            // Convert DTO to model object
+            let post = Post(text: postDTO.text, imageName: postDTO.imageName, timestamp: postDTO.timestamp)
+            post.id = postDTO.id
+
+            // If there's an author, create a User object
+            if let authorDTO = postDTO.author {
+                let author = User(name: authorDTO.name, username: authorDTO.username, profileImageName: authorDTO.profileImageName)
+                author.id = authorDTO.id
+                post.author = author
+            }
 
             // Notify the presenter that post was created successfully
             print("DEBUG: PostsInteractor.createPost - Calling presenter?.didCreatePost")
@@ -91,11 +117,26 @@ final class PostsInteractor: PostsInteractorInputProtocol, @unchecked Sendable {
 
     func fetchUsers() async {
         // Use the ModelActor to fetch users safely
-        let users = await modelActor.fetchUsers()
+        let userDTOs = await modelActor.fetchUsers()
+
+        // Convert DTOs to model objects
+        let users = userDTOs.map { dto -> User in
+            let user = User(name: dto.name, username: dto.username, profileImageName: dto.profileImageName)
+            user.id = dto.id
+            return user
+        }
 
         if users.isEmpty {
             // Setup dummy users if none exist
-            let dummyUsers = await modelActor.setupDummyUsers()
+            let dummyUserDTOs = await modelActor.setupDummyUsers()
+
+            // Convert DTOs to model objects
+            let dummyUsers = dummyUserDTOs.map { dto -> User in
+                let user = User(name: dto.name, username: dto.username, profileImageName: dto.profileImageName)
+                user.id = dto.id
+                return user
+            }
+
             await presenter?.didFetchUsers(dummyUsers)
 
             // Select the first user by default
