@@ -81,7 +81,7 @@ final class CreatePostViewSnapshotTests: XCTestCase {
         
         // Record snapshot
         assertSnapshot(
-            matching: UIHostingController(rootView: createPostView),
+            of: UIHostingController(rootView: createPostView),
             as: .image(on: .iPhone13, traits: .init(userInterfaceStyle: .light))
         )
     }
