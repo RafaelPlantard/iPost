@@ -41,7 +41,7 @@ final class CreatePostViewSnapshotTests: XCTestCase {
         router.presenter = presenter
         
         // Set up test data
-        setupTestData()
+        await setupTestData()
     }
     
     @MainActor
@@ -94,10 +94,15 @@ final class CreatePostViewSnapshotTests: XCTestCase {
             dismiss: {}
         )
         
-        // Access the view state to set text
-        if let viewState = presenter.viewState as? CreatePostViewState {
-            viewState.postText = "This is a test post that I'm writing to test the snapshot of the CreatePostView with text content."
-        }
+        // Create the view first
+        let createPostView = CreatePostView(presenter: presenter, dismiss: {})
+        
+        // Create our own view state to manipulate
+        let customViewState = CreatePostViewState(presenter: presenter, dismiss: {})
+        customViewState.postText = "This is a test post that I'm writing to test the snapshot of the CreatePostView with text content."
+        
+        // Use reflection to override the presenter's viewState
+        injectViewState(customViewState, into: presenter)
         
         // Record snapshot
         assertSnapshot(
@@ -114,11 +119,13 @@ final class CreatePostViewSnapshotTests: XCTestCase {
             dismiss: {}
         )
         
-        // Access the view state to set text and image
-        if let viewState = presenter.viewState as? CreatePostViewState {
-            viewState.postText = "Test post with an image"
-            viewState.selectedImageName = "photo"
-        }
+        // Create our own view state to manipulate
+        let customViewState = CreatePostViewState(presenter: presenter, dismiss: {})
+        customViewState.postText = "Test post with an image"
+        customViewState.selectedImageName = "photo"
+        
+        // Use reflection to override the presenter's viewState
+        injectViewState(customViewState, into: presenter)
         
         // Record snapshot
         assertSnapshot(
@@ -132,5 +139,14 @@ final class CreatePostViewSnapshotTests: XCTestCase {
             as: .image(on: .iPhone13, traits: .init(userInterfaceStyle: .dark)),
             named: "dark_mode"
         )
+    }
+    
+    // Helper method to inject a viewState into a presenter
+    private func injectViewState(_ viewState: CreatePostViewState, into presenter: PostsPresenter) {
+        // Using Objective-C runtime to modify private property
+        let selector = Selector("setViewState:")
+        if presenter.responds(to: selector) {
+            presenter.perform(selector, with: viewState)
+        }
     }
 }

@@ -116,12 +116,25 @@ final class PostsViewSnapshotTests: XCTestCase {
         modelContext.insert(user)
         try modelContext.save()
         
-        // Force loading state without waiting for viewDidLoad
+        // Create the view with our presenter
         let postsView = PostsView(presenter: presenter)
         
-        // Manually set loading state on the view state
-        if let viewState = presenter.viewState as? PostsViewState {
-            viewState.isLoading = true
+        // Since we can't directly access the presenter's viewState, we'll create our own
+        // view state and assign it to the presenter using reflection
+        let customViewState = PostsViewState(presenter: presenter)
+        customViewState.isLoading = true
+        
+        // Use reflection to inject our viewState
+        let presenterMirror = Mirror(reflecting: presenter)
+        for child in presenterMirror.children {
+            if child.label == "viewState" {
+                // Using Objective-C runtime to modify private property
+                let selector = Selector("setViewState:")
+                if presenter.responds(to: selector) {
+                    presenter.perform(selector, with: customViewState)
+                }
+                break
+            }
         }
         
         // Record snapshot

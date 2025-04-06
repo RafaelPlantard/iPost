@@ -41,13 +41,13 @@ final class ToastViewSnapshotTests: XCTestCase {
         
         // Test light mode
         assertSnapshot(
-            matching: UIHostingController(rootView: wrappedView),
+            of: UIHostingController(rootView: wrappedView),
             as: .image(on: .iPhone13, traits: .init(userInterfaceStyle: .light))
         )
         
         // Test dark mode
         assertSnapshot(
-            matching: UIHostingController(rootView: wrappedView),
+            of: UIHostingController(rootView: wrappedView),
             as: .image(on: .iPhone13, traits: .init(userInterfaceStyle: .dark)),
             named: "dark_mode"
         )
@@ -69,7 +69,7 @@ final class ToastViewSnapshotTests: XCTestCase {
         }
         
         assertSnapshot(
-            matching: UIHostingController(rootView: wrappedView),
+            of: UIHostingController(rootView: wrappedView),
             as: .image(on: .iPhone13, traits: .init(userInterfaceStyle: .light))
         )
     }
@@ -90,7 +90,7 @@ final class ToastViewSnapshotTests: XCTestCase {
         }
         
         assertSnapshot(
-            matching: UIHostingController(rootView: wrappedView),
+            of: UIHostingController(rootView: wrappedView),
             as: .image(on: .iPhone13, traits: .init(userInterfaceStyle: .light))
         )
     }
@@ -111,7 +111,7 @@ final class ToastViewSnapshotTests: XCTestCase {
         }
         
         assertSnapshot(
-            matching: UIHostingController(rootView: wrappedView),
+            of: UIHostingController(rootView: wrappedView),
             as: .image(on: .iPhone13, traits: .init(userInterfaceStyle: .light))
         )
     }
@@ -132,7 +132,7 @@ final class ToastViewSnapshotTests: XCTestCase {
         }
         
         assertSnapshot(
-            matching: UIHostingController(rootView: wrappedView),
+            of: UIHostingController(rootView: wrappedView),
             as: .image(on: .iPhone13, traits: .init(userInterfaceStyle: .light))
         )
     }
