@@ -34,12 +34,12 @@ final class PostsInteractor: PostsInteractorInputProtocol {
     weak var presenter: PostsInteractorOutputProtocol?
     private var modelContext: ModelContext
     private let userPreferencesInteractor: UserPreferencesInteractorInputProtocol
-    
+
     init(modelContext: ModelContext, userPreferencesInteractor: UserPreferencesInteractorInputProtocol = UserPreferencesInteractor()) {
         self.modelContext = modelContext
         self.userPreferencesInteractor = userPreferencesInteractor
     }
-    
+
     @MainActor
     private func fetchUser(withId id: UUID) -> User? {
         let descriptor = FetchDescriptor<User>(
@@ -47,7 +47,7 @@ final class PostsInteractor: PostsInteractorInputProtocol {
                 user.id == id
             }
         )
-        
+
         do {
             let users = try modelContext.fetch(descriptor)
             return users.first
@@ -58,63 +58,63 @@ final class PostsInteractor: PostsInteractorInputProtocol {
             return nil
         }
     }
-    
+
     @MainActor
     func saveSelectedUserId(_ userId: UUID?) {
         userPreferencesInteractor.saveSelectedUserId(userId)
     }
-    
+
     @MainActor
     func getSelectedUserId() -> UUID? {
         return userPreferencesInteractor.getSelectedUserId()
     }
-    
+
     @MainActor
     func fetchPosts() async {
         do {
             // Clear any existing fetch cache to ensure fresh results
             modelContext.processPendingChanges()
-            
+
             // Create descriptor with explicit fetch policy for fresh results
             var descriptor = FetchDescriptor<Post>(
                 sortBy: [SortDescriptor(\.timestamp, order: .reverse)]
             )
             descriptor.fetchLimit = 50 // Limit to prevent performance issues
-            
+
             #if DEBUG
             // Force SwiftData to refresh in debug mode
             descriptor.includePendingChanges = true
             #endif
-            
+
             let posts = try modelContext.fetch(descriptor)
             presenter?.didFetchPosts(posts)
         } catch {
             presenter?.onError(message: "Failed to fetch posts: \(error.localizedDescription)")
         }
     }
-    
+
     @MainActor
     func createPost(text: String, imageName: String?, forUser userId: UUID) async {
         guard let user = fetchUser(withId: userId) else {
             presenter?.onError(message: "User not found")
             return
         }
-        
+
         // Create post with current timestamp
         let post = Post(text: text, imageName: imageName, author: user)
         user.posts.append(post) // Ensure the post is linked to the user
         modelContext.insert(post)
-        
+
         do {
             // Save immediately
             try modelContext.save()
-            
+
             // Process pending changes to ensure data consistency
             modelContext.processPendingChanges()
-            
+
             // Notify the presenter that post was created successfully
             presenter?.didCreatePost(post)
-            
+
             // Immediately fetch posts with no delay
             // This ensures the UI is updated with the new post right away
             await fetchPosts()
@@ -122,7 +122,7 @@ final class PostsInteractor: PostsInteractorInputProtocol {
             presenter?.onError(message: "Failed to create post: \(error.localizedDescription)")
         }
     }
-    
+
     @MainActor
     func fetchUsers() async {
         do {
@@ -132,7 +132,7 @@ final class PostsInteractor: PostsInteractorInputProtocol {
                 await setupDummyUsers()
             } else {
                 await presenter?.didFetchUsers(users)
-                
+
                 // Check if there's a saved user selection
                 if let savedUserId = getSelectedUserId() {
                     if users.contains(where: { $0.id == savedUserId }) {
@@ -152,7 +152,7 @@ final class PostsInteractor: PostsInteractorInputProtocol {
             presenter?.onError(message: "Failed to fetch users: \(error.localizedDescription)")
         }
     }
-    
+
     @MainActor
     private func setupDummyUsers() async {
         // Create sample users
@@ -161,32 +161,32 @@ final class PostsInteractor: PostsInteractorInputProtocol {
             User(name: "Jane Smith", username: "@janesmith", profileImageName: "person.crop.circle.fill"),
             User(name: "Robert Johnson", username: "@robertj", profileImageName: "person.2.fill")
         ]
-        
+
         // Add users to database
         for user in users {
             modelContext.insert(user)
         }
-        
+
         // Create sample posts for each user
         let post1 = Post(text: "Just started using iPost! Loving it so far!", author: users[0])
         let post2 = Post(text: "Working on a new project today #coding", author: users[1])
         let post3 = Post(text: "Beautiful weather for a hike!", imageName: "figure.hiking", author: users[2])
-        let post4 = Post(text: "Check out this cool app I'm building", imageName: "app.fill", author: users[0])
-        
+        let post4 = Post(text: "Check out this cool app I'm building", imageName: "laptopcomputer.and.iphone", author: users[0])
+
         // Add posts to database
         modelContext.insert(post1)
         modelContext.insert(post2)
         modelContext.insert(post3)
         modelContext.insert(post4)
-        
+
         do {
             try modelContext.save()
-            
+
             // Fetch users to update presenter
             let descriptor = FetchDescriptor<User>()
             let fetchedUsers = try modelContext.fetch(descriptor)
             await presenter?.didFetchUsers(fetchedUsers)
-            
+
             // Fetch posts after users
             await fetchPosts()
         } catch {
