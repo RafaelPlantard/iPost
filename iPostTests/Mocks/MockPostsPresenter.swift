@@ -14,48 +14,49 @@ import SwiftUI
 @MainActor
 final class MockPostsPresenter: PostsPresenterInputProtocol {
     // MARK: - Properties for testing
-    
+
     // State tracking
     var users: [User] = []
     var posts: [Post] = []
     var selectedUserId: UUID? = nil
-    
+
     // Captured method calls for verification
     var capturedTexts: [String] = []
     var capturedImageNames: [String?] = []
     var viewDidLoadCalled = false
     var fetchPostsCalled = false
     var selectUserCalls: [UUID] = []
-    
-    // Allow injection of a custom viewState for testing
+
+    // Allow injection of custom viewStates for testing
     var viewState: PostsPresenterOutputProtocol?
-    
+
     // Mock user for testing
     let testUser = User(name: "Test User", username: "@testuser", profileImageName: "person.fill")
-    
+
     init() {
         users = [testUser]
         selectedUserId = testUser.id
     }
-    
+
     // MARK: - Protocol Implementation
-    
+
     func viewDidLoad() {
         viewDidLoadCalled = true
     }
-    
+
     func fetchPosts() async {
         fetchPostsCalled = true
     }
-    
+
     func createPost(text: String, imageName: String?) async {
         capturedTexts.append(text)
         capturedImageNames.append(imageName)
-        
+
         // Simulate success behavior for tests
         viewState?.showToast(message: "Post created successfully", type: .success)
+        viewState?.postCreated()
     }
-    
+
     func selectUser(id: UUID) async {
         selectedUserId = id
         selectUserCalls.append(id)
