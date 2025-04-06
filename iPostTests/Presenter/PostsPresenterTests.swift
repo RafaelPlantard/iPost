@@ -296,9 +296,6 @@ final class MockPostsViewState: PostsPresenterOutputProtocol {
     
     var postCreatedCalled = false
     
-    var didFetchUsersCalled = false
-    var didFetchUsersList: [User] = []
-    
     func updatePosts(_ posts: [Post]) {
         updatePostsCalled = true
         self.posts = posts
@@ -327,25 +324,5 @@ final class MockPostsViewState: PostsPresenterOutputProtocol {
     
     func postCreated() {
         postCreatedCalled = true
-    }
-    
-    func didFetchPosts(_ posts: [Post]) {
-        updatePostsCalled = true
-        posts = posts
-    }
-    
-    func didCreatePost(_ post: Post) {
-        postCreatedCalled = true
-        didCreatePostParam = post
-    }
-    
-    func didSelectUser(_ userId: UUID) {
-        updateSelectedUserCalled = true
-        selectedUserId = userId
-    }
-    
-    func onError(message: String) {
-        onErrorCalled = true
-        onErrorMessage = message
     }
 }
