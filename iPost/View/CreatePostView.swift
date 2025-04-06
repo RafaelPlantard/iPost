@@ -155,8 +155,17 @@ struct CreatePostView: View {
     }
     
     private func createPost() {
-        presenter.createPost(text: postText, imageName: selectedImageName)
-        // The presenter will handle closing this sheet after successful creation
+        // Save a copy of the entered text in case we need to restore it
+        let savedText = postText
+        let savedImageName = selectedImageName
+        
+        // Call the presenter to create the post
+        presenter.createPost(text: savedText, imageName: savedImageName)
+        
+        // Direct dismiss approach in addition to the protocol method
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            dismiss()
+        }
     }
 }
 
@@ -174,7 +183,15 @@ extension CreatePostView: PostsPresenterOutputProtocol {
     }
 
     func postCreated() {
-        dismiss()
+        // Clear fields before dismissing
+        postText = ""
+        selectedImageName = nil
+        showImagePicker = false
+        
+        // Force UI update before dismissing
+        DispatchQueue.main.async {
+            dismiss()
+        }
     }
 
     func selectedUserChanged(id: UUID?) {

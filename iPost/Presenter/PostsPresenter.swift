@@ -38,7 +38,18 @@ extension PostsPresenter: PostsPresenterInputProtocol {
             return
         }
         
-        interactor.createPost(text: text, imageName: imageName, forUser: userId)
+        // First notify view that post creation started (helps with animation timing)
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self else { return }
+            // Show toast first for better UX - it will appear as the modal animates away
+            self.view?.showToast(message: "Creating post...", type: .info)
+        }
+        
+        // Slight delay to allow UI to update before we process
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
+            guard let self = self else { return }
+            self.interactor.createPost(text: text, imageName: imageName, forUser: userId)
+        }
     }
     
     func selectUser(id: UUID) {
@@ -79,9 +90,15 @@ extension PostsPresenter: PostsInteractorOutputProtocol {
     func didCreatePost(_ post: Post) {
         // Refresh posts after creating a new one
         interactor.fetchPosts()
-        // Show success toast and close the create post screen
-        view?.showToast(message: "Post created successfully!", type: .success)
+        
+        // First notify the view to close the sheet
         view?.postCreated()
+        
+        // Show success toast after a slight delay to ensure it appears after modal dismissal
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
+            guard let self = self else { return }
+            self.view?.showToast(message: "Post created successfully!", type: .success)
+        }
     }
     
     func onError(message: String) {
