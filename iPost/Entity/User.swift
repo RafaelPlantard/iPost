@@ -1,4 +1,4 @@
-// 
+//
 //  User.swift
 //  iPost
 //
@@ -9,14 +9,14 @@ import Foundation
 import SwiftData
 
 @Model
-final class User {
+final class User: Sendable {
     var id: UUID = UUID()
     var name: String = ""
     var username: String = ""
     var profileImageName: String = ""
 
     @Relationship(deleteRule: .cascade, inverse: \Post.author) var posts: [Post]? = []
-    
+
     init(id: UUID = UUID(), name: String, username: String, profileImageName: String) {
         self.id = id
         self.name = name

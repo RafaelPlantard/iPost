@@ -9,13 +9,13 @@ import Foundation
 import SwiftData
 
 @Model
-final class Post {
+final class Post: Sendable {
     var id: UUID = UUID()
     var text: String = ""
     var imageName: String?
     var timestamp: Date = Date()
     var author: User?
-    
+
     init(id: UUID = UUID(), text: String, imageName: String? = nil, timestamp: Date = Date(), author: User? = nil) {
         self.id = id
         self.text = text

@@ -9,7 +9,7 @@ import Foundation
 import SwiftData
 
 // Define a global actor for SwiftData operations
-@globalActor actor PostsModelActor {
+@globalActor actor PostsModelActor: GlobalActor {
     static let shared = PostsModelActor()
 
     // The ModelContext should only be accessed within this actor
