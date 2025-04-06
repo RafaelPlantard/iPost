@@ -81,12 +81,17 @@ extension PostsPresenter: PostsInteractorOutputProtocol {
         viewState?.updateSelectedUser(id: userId)
     }
     func didFetchPosts(_ posts: [Post]) {
+        print("DEBUG: PostsPresenter.didFetchPosts called with \(posts.count) posts")
+
         // Make a copy of the array to ensure we're working with a new instance
         let updatedPosts = Array(posts)
         self.posts = updatedPosts
 
         // Since we're using @MainActor, we're already on the main thread
+        print("DEBUG: PostsPresenter.didFetchPosts calling viewState?.updatePosts")
         viewState?.updatePosts(updatedPosts)
+
+        print("DEBUG: PostsPresenter.didFetchPosts completed")
     }
 
     func didFetchUsers(_ users: [User]) async {
@@ -104,30 +109,27 @@ extension PostsPresenter: PostsInteractorOutputProtocol {
     }
 
     func didCreatePost(_ post: Post) {
-        // First notify view that post was created so it can dismiss sheet
-        viewState?.postCreated()
+        print("DEBUG: PostsPresenter.didCreatePost called with post ID: \(post.id)")
 
-        // Create a separate task for UI updates to avoid blocking
-        Task {
-            // Short delay to let the dismiss animation begin
-            try? await Task.sleep(for: .milliseconds(100))
+        // Show the success toast
+        viewState?.showToast(message: "Post created successfully!", type: .success)
 
-            // Show the success toast
-            viewState?.showToast(message: "Post created successfully!", type: .success)
-
-            // Immediately add the new post to our local list to ensure it's visible
-            // even before the full refresh completes
-            if !posts.contains(where: { $0.id == post.id }) {
-                var updatedPosts = Array(posts) // Create a new array to force reference change
-                updatedPosts.insert(post, at: 0) // Add at the beginning (newest first)
-                self.posts = updatedPosts // Update the presenter's copy
-                viewState?.updatePosts(updatedPosts) // Update the UI immediately
-            }
-
-            // The interactor will call fetchPosts() after creating the post,
-            // which will refresh the UI with the latest data from SwiftData
-            // This is a belt-and-suspenders approach to ensure the UI is updated
+        print("DEBUG: About to update posts list in presenter with new post")
+        // Immediately add the new post to our local list to ensure it's visible
+        // even before the full refresh completes
+        if !posts.contains(where: { $0.id == post.id }) {
+            var updatedPosts = Array(posts) // Create a new array to force reference change
+            updatedPosts.insert(post, at: 0) // Add at the beginning (newest first)
+            self.posts = updatedPosts // Update the presenter's copy
+            print("DEBUG: Calling viewState?.updatePosts with \(updatedPosts.count) posts")
+            viewState?.updatePosts(updatedPosts) // Update the UI immediately
+        } else {
+            print("DEBUG: Post already exists in posts list")
         }
+
+        // The interactor will call fetchPosts() after creating the post,
+        // which will refresh the UI with the latest data from SwiftData
+        // This is a belt-and-suspenders approach to ensure the UI is updated
     }
 
     func onError(message: String) {

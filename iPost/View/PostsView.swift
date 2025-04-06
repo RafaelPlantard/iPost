@@ -12,28 +12,28 @@ struct PostsView: View {
     // Following VIPER principles - ViewState pattern
     private var presenter: PostsPresenterInputProtocol
     @ObservedObject private var viewState: PostsViewState
-    
+
     init(presenter: PostsPresenterInputProtocol) {
         self.presenter = presenter
         self.viewState = PostsViewState(presenter: presenter)
-        
+
         // Connect viewState to presenter
         if let presenter = presenter as? PostsPresenter {
             presenter.viewState = viewState
         }
     }
-    
+
     var body: some View {
         NavigationStack {
             VStack {
-            
+
                 // User dropdown selector at the top
                 if !viewState.users.isEmpty {
                     userSelectionPicker
                         .padding(.top)
                         .accessibilityIdentifier("user-picker")
                 }
-                
+
                 // Posts list content
                 if viewState.isLoading {
                     VStack {
@@ -89,7 +89,12 @@ struct PostsView: View {
                     .accessibilityIdentifier("create-post-button")
                 }
             }
-            .sheet(isPresented: $viewState.showCreatePostSheet) {
+            .sheet(isPresented: $viewState.showCreatePostSheet, onDismiss: {
+                // Refresh posts when the sheet is dismissed
+                Task {
+                    await viewState.refreshPosts()
+                }
+            }) {
                 CreatePostView(
                     presenter: presenter,
                     dismiss: { viewState.hideCreatePost() }
@@ -106,7 +111,7 @@ struct PostsView: View {
             .withToasts()
         }
     }
-    
+
     // User selection picker component
     private var userSelectionPicker: some View {
         VStack(alignment: .leading) {
@@ -114,7 +119,7 @@ struct PostsView: View {
                 .font(.caption)
                 .foregroundColor(.gray)
                 .padding(.horizontal)
-            
+
             Menu {
                 ForEach(viewState.users) { user in
                     Button(action: {
@@ -139,11 +144,11 @@ struct PostsView: View {
             } label: {
                 HStack {
                     let selectedUser = viewState.users.first(where: { $0.id == viewState.selectedUserId })
-                    
+
                     Image(systemName: selectedUser?.profileImageName ?? "person.circle")
                         .font(.title3)
                         .foregroundColor(.accentColor)
-                    
+
                     VStack(alignment: .leading) {
                         Text(selectedUser?.name ?? "Select User")
                             .font(.headline)
@@ -151,9 +156,9 @@ struct PostsView: View {
                             .font(.subheadline)
                             .foregroundColor(.gray)
                     }
-                    
+
                     Spacer()
-                    
+
                     Image(systemName: "chevron.down")
                         .font(.caption)
                         .foregroundColor(.gray)
@@ -176,7 +181,7 @@ struct PostsView: View {
 // MARK: - PostRowView
 struct PostRowView: View {
     let post: Post
-    
+
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             // User info
@@ -184,22 +189,22 @@ struct PostRowView: View {
                 Image(systemName: post.author?.profileImageName ?? "person.circle")
                     .font(.title)
                     .foregroundColor(.blue)
-                
+
                 VStack(alignment: .leading) {
                     Text(post.author?.name ?? "Unknown User")
                         .font(.headline)
-                    
+
                     Text(post.author?.username ?? "@unknown")
                         .font(.subheadline)
                         .foregroundColor(.gray)
                 }
             }
-            
+
             // Post content
             Text(post.text)
                 .font(.body)
                 .padding(.vertical, 5)
-            
+
             // Post image (if exists)
             if let imageName = post.imageName {
                 Image(systemName: imageName)
@@ -209,7 +214,7 @@ struct PostRowView: View {
                     .frame(maxWidth: .infinity)
                     .cornerRadius(10)
             }
-            
+
             // Post timestamp
             Text(post.timestamp, format: .relative(presentation: .named))
                 .font(.caption)
@@ -225,18 +230,18 @@ struct PostRowView: View {
 #Preview {
     let modelContainer = try! ModelContainer(for: Post.self, User.self)
     let modelContext = modelContainer.mainContext
-    
+
     // Create dummy data
     let user = User(name: "Preview User", username: "@preview", profileImageName: "person.fill")
     let post1 = Post(text: "This is a preview post with an image!", imageName: "photo", author: user)
     let post2 = Post(text: "Another post for preview purposes.", author: user)
-    
+
     modelContext.insert(user)
     modelContext.insert(post1)
     modelContext.insert(post2)
-    
+
     // Initialize VIPER module using the createModule helper
     let (view, _) = PostsRouter.createModule(modelContext: modelContext)
-    
+
     return AnyView(view)
 }

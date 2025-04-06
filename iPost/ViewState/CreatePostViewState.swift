@@ -8,7 +8,7 @@
 import SwiftUI
 import Combine
 
-final class CreatePostViewState: ObservableObject, PostsPresenterOutputProtocol {
+final class CreatePostViewState: ObservableObject {
     // UI state properties
     @Published var postText: String = ""
     @Published var selectedImageName: String? = nil
@@ -72,12 +72,10 @@ final class CreatePostViewState: ObservableObject, PostsPresenterOutputProtocol 
         Task {
             await presenter?.createPost(text: savedText, imageName: savedImageName)
 
-            // Clear the form immediately on the main actor
+            // Handle post creation completion
             await MainActor.run {
-                clearForm()
+                handlePostCreated()
             }
-
-            // The presenter will handle dismissing the view through postCreated()
         }
     }
 
@@ -103,32 +101,8 @@ final class CreatePostViewState: ObservableObject, PostsPresenterOutputProtocol 
         dismiss?()
     }
 
-    // MARK: - PostsPresenterOutputProtocol Implementation
-
-    func updatePosts(_ posts: [Post]) {
-        // Not needed in this view
-    }
-
-    func updateUsers(_ users: [User]) {
-        // Since we're already on the MainActor (from protocol declaration)
-        // we can directly update the property
-        self.users = users
-    }
-
-    func updateSelectedUser(id: UUID?) {
-        self.selectedUserId = id
-        self.selectedUser = users.first(where: { $0.id == id })
-    }
-
-    func showError(message: String) {
-        // Could be enhanced to show an error overlay or alert
-    }
-
-    func showToast(message: String, type: ToastMessage.ToastType) {
-        // Toast is handled by the parent view
-    }
-
-    func postCreated() {
+    // Handle post creation completion
+    func handlePostCreated() {
         // Clear the form
         clearForm()
 

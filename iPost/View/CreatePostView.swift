@@ -12,26 +12,24 @@ struct CreatePostView: View {
     private var presenter: PostsPresenterInputProtocol
     private var customDismiss: (() -> Void)?
     @ObservedObject private var viewState: CreatePostViewState
-    
+
     init(presenter: PostsPresenterInputProtocol, dismiss: @escaping (() -> Void) = {}) {
         self.presenter = presenter
         self.customDismiss = dismiss
         self.viewState = CreatePostViewState(presenter: presenter, dismiss: { dismiss() })
-        
-        // Connect viewState to presenter if using concrete PostsPresenter
-        if let presenter = presenter as? PostsPresenter {
-            presenter.viewState = viewState
-        }
+
+        // We don't set presenter.viewState here anymore to avoid overriding the main PostsViewState
+        // This was causing the bug where new posts weren't visible after creation
     }
-    
+
     // Sample system images for selection
     private let availableImages = [
-        "photo", "camera", "car.fill", "airplane", "heart.fill", 
-        "star.fill", "figure.hiking", "gamecontroller.fill", "book.fill", 
-        "laptopcomputer", "desktopcomputer", "cup.and.saucer.fill", 
+        "photo", "camera", "car.fill", "airplane", "heart.fill",
+        "star.fill", "figure.hiking", "gamecontroller.fill", "book.fill",
+        "laptopcomputer", "desktopcomputer", "cup.and.saucer.fill",
         "fork.knife", "music.note", "film", "map", "graduationcap.fill"
     ]
-    
+
     var body: some View {
         NavigationStack {
             Form {
@@ -41,7 +39,7 @@ struct CreatePostView: View {
                         .textFieldStyle(.plain)
                         .frame(minHeight: 100, alignment: .topLeading)
                 }
-                
+
                 Section("Add an image") {
                     // Selected image preview
                     if let imageName = viewState.selectedImageName {
@@ -53,7 +51,7 @@ struct CreatePostView: View {
                                     .scaledToFit()
                                     .frame(height: 150)
                                     .foregroundColor(.accentColor)
-                                
+
                                 Button("Remove Image") {
                                     viewState.removeImage()
                                 }
@@ -70,14 +68,14 @@ struct CreatePostView: View {
                         }
                     }
                 }
-                
+
                 // User information
                 Section("Posting as") {
                     HStack {
                         Image(systemName: viewState.selectedUser?.profileImageName ?? "person.circle")
                             .font(.title2)
                             .foregroundColor(.blue)
-                        
+
                         VStack(alignment: .leading) {
                             Text(viewState.selectedUser?.name ?? "Select a user")
                                 .font(.headline)
@@ -99,7 +97,7 @@ struct CreatePostView: View {
                         viewState.dismissView()
                     }
                 }
-                
+
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Post") {
                         viewState.createPost()
@@ -113,7 +111,7 @@ struct CreatePostView: View {
             }
         }
     }
-    
+
     private var imagePicker: some View {
         NavigationStack {
             ScrollView {
@@ -127,7 +125,7 @@ struct CreatePostView: View {
                                 .padding()
                                 .background(Color.gray.opacity(0.1))
                                 .cornerRadius(8)
-                            
+
                             Text(imageName)
                                 .font(.caption)
                         }
@@ -149,7 +147,7 @@ struct CreatePostView: View {
             }
         }
     }
-    
+
     // createPost moved to ViewState
 }
 

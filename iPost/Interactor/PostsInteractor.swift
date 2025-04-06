@@ -67,6 +67,7 @@ final class PostsInteractor: PostsInteractorInputProtocol {
     }
 
     func fetchPosts() async {
+        print("DEBUG: PostsInteractor.fetchPosts called")
         do {
             // Force SwiftData to process any pending changes first
             modelContext.processPendingChanges()
@@ -82,19 +83,24 @@ final class PostsInteractor: PostsInteractorInputProtocol {
 
             // Explicitly tell SwiftData we want a fresh fetch
             let posts = try modelContext.fetch(descriptor)
+            print("DEBUG: PostsInteractor.fetchPosts fetched \(posts.count) posts")
 
             // Create a new array to ensure reference changes are detected
             let freshPosts = Array(posts)
 
             // Notify presenter with the fresh data
+            print("DEBUG: PostsInteractor calling presenter?.didFetchPosts with \(freshPosts.count) posts")
             presenter?.didFetchPosts(freshPosts)
         } catch {
+            print("DEBUG: PostsInteractor.fetchPosts error: \(error.localizedDescription)")
             presenter?.onError(message: "Failed to fetch posts: \(error.localizedDescription)")
         }
     }
 
     func createPost(text: String, imageName: String?, forUser userId: UUID) async {
+        print("DEBUG: PostsInteractor.createPost called with userId: \(userId)")
         guard let user = fetchUser(withId: userId) else {
+            print("DEBUG: PostsInteractor.createPost - User not found")
             presenter?.onError(message: "User not found")
             return
         }
@@ -103,23 +109,30 @@ final class PostsInteractor: PostsInteractorInputProtocol {
         let post = Post(text: text, imageName: imageName, author: user)
         user.posts.append(post) // Ensure the post is linked to the user
         modelContext.insert(post)
+        print("DEBUG: PostsInteractor.createPost - Created post with ID: \(post.id)")
 
         do {
             // Save immediately
             try modelContext.save()
+            print("DEBUG: PostsInteractor.createPost - Saved to ModelContext")
 
             // Process pending changes to ensure data consistency
             modelContext.processPendingChanges()
+            print("DEBUG: PostsInteractor.createPost - Processed pending changes")
 
             // Notify the presenter that post was created successfully
+            print("DEBUG: PostsInteractor.createPost - Calling presenter?.didCreatePost")
             presenter?.didCreatePost(post)
 
             // Add a small delay to allow SwiftData to fully process the changes
+            print("DEBUG: PostsInteractor.createPost - Waiting for 300ms before fetching posts")
             try await Task.sleep(for: .milliseconds(300))
 
             // Explicitly fetch posts again to ensure the UI is updated
+            print("DEBUG: PostsInteractor.createPost - Calling fetchPosts()")
             await fetchPosts()
         } catch {
+            print("DEBUG: PostsInteractor.createPost - Error: \(error.localizedDescription)")
             presenter?.onError(message: "Failed to create post: \(error.localizedDescription)")
         }
     }

@@ -62,6 +62,8 @@ final class PostsViewState: ObservableObject, PostsPresenterOutputProtocol {
     // MARK: - PostsPresenterOutputProtocol Implementation
 
     func updatePosts(_ posts: [Post]) {
+        print("DEBUG: PostsViewState.updatePosts called with \(posts.count) posts")
+
         // Turn off loading state
         isLoading = false
 
