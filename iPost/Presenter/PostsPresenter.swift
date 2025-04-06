@@ -15,7 +15,7 @@ final class PostsPresenter: ObservableObject {
     private let interactor: PostsInteractorInputProtocol
     private let router: PostsRouter
     
-    // State that's needed across views - not directly exposed to views
+    // State that's needed across views - exposed as per protocol requirements
     private(set) var users: [User] = []
     private(set) var posts: [Post] = []
     private(set) var selectedUserId: UUID?
@@ -29,7 +29,12 @@ final class PostsPresenter: ObservableObject {
 // MARK: - PostsPresenterInputProtocol
 extension PostsPresenter: PostsPresenterInputProtocol {
     func viewDidLoad() {
+        // First fetch users to ensure we have a selected user
         interactor.fetchUsers()
+        // Then fetch posts with a small delay to ensure the users are processed first
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
+            self?.interactor.fetchPosts()
+        }
     }
     
     func createPost(text: String, imageName: String?) {
@@ -56,6 +61,12 @@ extension PostsPresenter: PostsPresenterInputProtocol {
         // Save the selected user to persist between app launches
         interactor.saveSelectedUserId(id)
         // When a user is selected, we might want to refresh the feed
+        fetchPosts()
+    }
+    
+    func fetchPosts() {
+        // Show a loading state first
+        viewState?.isLoading = true
         interactor.fetchPosts()
     }
 }
@@ -67,29 +78,54 @@ extension PostsPresenter: PostsInteractorOutputProtocol {
         viewState?.updateSelectedUser(id: userId)
     }
     func didFetchPosts(_ posts: [Post]) {
-        self.posts = posts
-        viewState?.updatePosts(posts)
+        // Make a copy of the array to ensure we're working with a new instance
+        let updatedPosts = Array(posts)
+        self.posts = updatedPosts
+        
+        // Ensure view update is on main thread
+        DispatchQueue.main.async { [weak self] in
+            self?.viewState?.updatePosts(updatedPosts)
+        }
     }
     
     func didFetchUsers(_ users: [User]) {
-        self.users = users
-        viewState?.updateUsers(users)
+        // Make a copy of the array to ensure we're working with a new instance
+        let updatedUsers = Array(users)
+        self.users = updatedUsers
         
-        // After users are fetched, we fetch posts
-        interactor.fetchPosts()
+        // Ensure view update is on main thread
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self else { return }
+            self.viewState?.updateUsers(updatedUsers)
+            
+            // If no user is selected, select the first one
+            if self.selectedUserId == nil && !updatedUsers.isEmpty {
+                self.selectUser(id: updatedUsers[0].id)
+            }
+        }
     }
     
     func didCreatePost(_ post: Post) {
-        // Notify view that post was created so it can dismiss sheet immediately
+        // First add the new post to our local array to update the UI immediately
+        // This ensures we don't have to wait for a full refresh
+        if !posts.contains(where: { $0.id == post.id }) {
+            posts.insert(post, at: 0) // Add to the beginning since posts are shown newest first
+            viewState?.updatePosts(posts) // Update UI with the modified array
+        }
+        
+        // Notify view that post was created so it can dismiss sheet
         viewState?.postCreated()
         
         // Show success toast after a small delay to allow the modal to dismiss first
-        // This avoids potential UI jank during the dismissal animation
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
-            self?.viewState?.showToast(message: "Post created successfully!", type: .success)
+            guard let self = self else { return }
+            self.viewState?.showToast(message: "Post created successfully!", type: .success)
+            
+            // After the toast is shown, fetch posts to ensure our list stays in sync
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
+                self?.interactor.fetchPosts()
+            }
         }
-        
-        // Note: We don't need to call fetchPosts() here anymore as the interactor does this for us
     }
     
     func onError(message: String) {

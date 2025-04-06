@@ -9,20 +9,26 @@ import Foundation
 
 // PostsPresenterInputProtocol: Protocol that defines the methods the view can call on the presenter
 protocol PostsPresenterInputProtocol: AnyObject {
+    var selectedUserId: UUID? { get }
+    
     func viewDidLoad()
     func createPost(text: String, imageName: String?)
     func selectUser(id: UUID)
-    var selectedUserId: UUID? { get }
-    var users: [User] { get }
-    var posts: [Post] { get }
+    func fetchPosts() // Add explicit fetch posts method for refreshing
 }
 
 // PostsPresenterOutputProtocol: Protocol that defines the methods the presenter can call on the ViewState
 protocol PostsPresenterOutputProtocol: AnyObject {
+    // View state updates
     func updatePosts(_ posts: [Post])
     func updateUsers(_ users: [User])
-    func showError(message: String)
-    func postCreated()
     func updateSelectedUser(id: UUID?)
+    
+    // Loading state
+    var isLoading: Bool { get set }
+    
+    // Notifications
+    func showError(message: String)
     func showToast(message: String, type: ToastMessage.ToastType)
+    func postCreated()
 }

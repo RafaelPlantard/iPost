@@ -93,23 +93,26 @@ extension PostsInteractor: PostsInteractorInputProtocol {
             return
         }
         
+        // Create post with current timestamp
         let post = Post(text: text, imageName: imageName, author: user)
         modelContext.insert(post)
         
         do {
-            // Ensure post is saved immediately
+            // Save immediately
             try modelContext.save()
             
-            // Force a context refresh to ensure data consistency
+            // Process pending changes to ensure data consistency
             modelContext.processPendingChanges()
-
-            // Delay the fetch slightly to allow the SwiftData backend to process
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
+            
+            // First notify the presenter that post was created successfully
+            // This allows the UI to update immediately with the new post
+            presenter?.didCreatePost(post)
+            
+            // After a short delay, refresh posts to ensure everything is in sync
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) { [weak self] in
                 guard let self = self else { return }
-                // Fetch posts again to refresh the UI with the new post
+                // Fetch posts to update the UI with all current posts
                 self.fetchPosts()
-                // Notify presenter of successful creation
-                self.presenter?.didCreatePost(post)
             }
         } catch {
             presenter?.onError(message: "Failed to create post: \(error.localizedDescription)")

@@ -33,15 +33,44 @@ struct PostsView: View {
                         .padding(.top)
                 }
                 
-                // Posts list
-                List {
-                    ForEach(viewState.posts) { post in
-                        PostRowView(post: post)
+                // Posts list content
+                if viewState.isLoading {
+                    VStack {
+                        Spacer()
+                        ProgressView()
+                            .scaleEffect(1.5)
+                            .padding()
+                        Text("Loading posts...")
+                            .foregroundColor(.gray)
+                        Spacer()
                     }
-                }
-                .listStyle(.plain)
-                .refreshable {
-                    presenter.viewDidLoad()
+                } else if viewState.posts.isEmpty {
+                    VStack {
+                        Spacer()
+                        Image(systemName: "doc.text.image")
+                            .font(.system(size: 60))
+                            .foregroundColor(.gray)
+                            .padding()
+                        Text("No posts yet")
+                            .font(.title2)
+                        Text("Create your first post by tapping the pencil icon.")
+                            .foregroundColor(.gray)
+                            .multilineTextAlignment(.center)
+                            .padding()
+                        Spacer()
+                    }
+                    .padding()
+                } else {
+                    List {
+                        ForEach(viewState.posts) { post in
+                            PostRowView(post: post)
+                        }
+                    }
+                    .listStyle(.plain)
+                    .refreshable {
+                        viewState.isLoading = true
+                        presenter.viewDidLoad()
+                    }
                 }
             }
             .navigationTitle("iPosts")
