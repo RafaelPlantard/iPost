@@ -74,7 +74,6 @@ final class iPostUITests: XCTestCase {
 
         // If the identifier doesn't work, fall back to the previous approach
         if !textEditorExists {
-            print("Warning: Could not find post-text-editor by identifier, trying alternative methods")
             let fallbackExists = app.textViews.firstMatch.waitForExistence(timeout: 2) ||
                                app.textViews.element.waitForExistence(timeout: 2)
             XCTAssertTrue(fallbackExists, "Post text editor should exist")
@@ -127,8 +126,6 @@ final class iPostUITests: XCTestCase {
                 cancelButton.tap()
             } else {
                 // Fallback to other methods if the identifier doesn't work
-                print("Warning: Could not find image-picker-cancel-button, trying alternative methods")
-
                 // Try to find the navigation bar's cancel button specifically
                 let navBar = app.navigationBars["Select Image"]
                 let cancelInBar = navBar.buttons.matching(NSPredicate(format: "label CONTAINS %@", "Cancel")).firstMatch
@@ -147,7 +144,6 @@ final class iPostUITests: XCTestCase {
 
         // If the identifier doesn't work, fall back to finding by label
         if !submitButton.waitForExistence(timeout: 2) {
-            print("Warning: Could not find create-post-submit-button by identifier, trying by label")
             let fallbackButton = app.buttons["Post"]
             XCTAssertTrue(fallbackButton.exists, "Post button should exist")
             fallbackButton.tap()
@@ -231,7 +227,6 @@ final class iPostUITests: XCTestCase {
 
         // If the identifier doesn't work, fall back to the previous approach
         if !textEditorExists {
-            print("Warning: Could not find post-text-editor by identifier, trying alternative methods")
             let fallbackExists = app.textViews.firstMatch.waitForExistence(timeout: 2) ||
                                app.textViews.element.waitForExistence(timeout: 2)
             XCTAssertTrue(fallbackExists, "Post text editor should exist")
@@ -253,7 +248,6 @@ final class iPostUITests: XCTestCase {
 
         // If the identifier doesn't work, fall back to finding by label
         if !submitButton.waitForExistence(timeout: 2) {
-            print("Warning: Could not find create-post-submit-button by identifier, trying by label")
             let fallbackButton = app.buttons["Post"]
             XCTAssertTrue(fallbackButton.exists, "Post button should exist")
             fallbackButton.tap()
@@ -275,15 +269,6 @@ final class iPostUITests: XCTestCase {
                           app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "success")).firstMatch.exists ?
                           app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "success")).firstMatch :
                           app.staticTexts.firstMatch
-
-        // Check for the dismiss button (X icon) in the toast - try different approaches
-        let dismissButtonExists = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "xmark")).firstMatch.exists ||
-                                app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "dismiss")).firstMatch.exists
-
-        // This assertion is optional since some toast implementations might not have a dismiss button
-        if !dismissButtonExists {
-            print("Note: Toast dismiss button not found - this might be expected depending on implementation")
-        }
 
         // Get a reference to the dismiss button if it exists
         let dismissButton = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "xmark")).firstMatch.exists ?
@@ -344,25 +329,12 @@ final class iPostUITests: XCTestCase {
         if menuItem.exists {
             menuItem.tap()
         } else {
-            print("Warning: Could not find a menu item to tap, test may fail")
             // Try an alternative approach - tap on a specific area of the screen
             app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.3)).tap()
         }
 
         // Wait for the posts to refresh with the new user selection
         try await Task.sleep(nanoseconds: 1_000_000_000) // 1 second
-
-        // Verify the posts list updates (either showing posts or empty state)
-        // Try multiple approaches to detect if the posts list has updated
-        let postsListUpdated = app.otherElements["post-item"].firstMatch.waitForExistence(timeout: 1) ||
-                              app.staticTexts["No posts yet"].waitForExistence(timeout: 1) ||
-                              app.scrollViews.firstMatch.exists ||
-                              app.collectionViews.firstMatch.exists
-
-        // This is a more lenient check - we just want to verify the UI has updated in some way
-        if !postsListUpdated {
-            print("Warning: Could not definitively verify posts list updated, but continuing test")
-        }
 
         // Create a post with the selected user
         let createPostButton = app.buttons["create-post-button"]
@@ -386,7 +358,6 @@ final class iPostUITests: XCTestCase {
 
         // If the identifier doesn't work, fall back to the previous approach
         if !textEditorExists {
-            print("Warning: Could not find post-text-editor by identifier, trying alternative methods")
             let fallbackExists = app.textViews.firstMatch.waitForExistence(timeout: 2) ||
                                app.textViews.element.waitForExistence(timeout: 2)
             XCTAssertTrue(fallbackExists, "Post text editor should exist")
@@ -408,7 +379,6 @@ final class iPostUITests: XCTestCase {
 
         // If the identifier doesn't work, fall back to finding by label
         if !submitButton.waitForExistence(timeout: 2) {
-            print("Warning: Could not find create-post-submit-button by identifier, trying by label")
             let fallbackButton = app.buttons["Post"]
             XCTAssertTrue(fallbackButton.exists, "Post button should exist")
             fallbackButton.tap()
@@ -434,8 +404,6 @@ final class iPostUITests: XCTestCase {
             postFound = true
         } else {
             // If direct match fails, try scrolling to find it
-            print("Post not immediately visible, trying to scroll to find it")
-
             // Try scrolling a few times to find the post
             for _ in 1...3 {
                 app.swipeUp()
@@ -459,12 +427,6 @@ final class iPostUITests: XCTestCase {
                     postFound = true
                 }
             }
-        }
-
-        // Log a warning but don't fail the test if we can't find the post
-        // This makes the test more robust against timing issues
-        if !postFound {
-            print("Warning: Could not find the newly created post in the list. This might be due to timing or UI issues.")
         }
     }
 }

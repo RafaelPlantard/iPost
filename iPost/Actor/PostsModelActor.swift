@@ -24,7 +24,6 @@ import SwiftData
 
     func fetchUser(withId id: UUID) async -> UserDTO? {
         guard let modelContext = modelContext else {
-            print("ERROR: ModelContext not set in PostsModelActor")
             return nil
         }
 
@@ -38,14 +37,12 @@ import SwiftData
             let users = try modelContext.fetch(descriptor)
             return users.first.map { UserDTO(from: $0) }
         } catch {
-            print("ERROR: Failed to fetch user: \(error.localizedDescription)")
             return nil
         }
     }
 
     func fetchUsers() async -> [UserDTO] {
         guard let modelContext = modelContext else {
-            print("ERROR: ModelContext not set in PostsModelActor")
             return []
         }
 
@@ -54,14 +51,12 @@ import SwiftData
             let users = try modelContext.fetch(descriptor)
             return users.map { UserDTO(from: $0) }
         } catch {
-            print("ERROR: Failed to fetch users: \(error.localizedDescription)")
             return []
         }
     }
 
     func setupDummyUsers() async -> [UserDTO] {
         guard let modelContext = modelContext else {
-            print("ERROR: ModelContext not set in PostsModelActor")
             return []
         }
 
@@ -95,7 +90,6 @@ import SwiftData
             try modelContext.save()
             return users.map { UserDTO(from: $0) }
         } catch {
-            print("ERROR: Failed to setup dummy data: \(error.localizedDescription)")
             return []
         }
     }
@@ -104,7 +98,6 @@ import SwiftData
 
     func fetchPosts() async -> [PostDTO] {
         guard let modelContext = modelContext else {
-            print("ERROR: ModelContext not set in PostsModelActor")
             return []
         }
 
@@ -127,14 +120,12 @@ import SwiftData
             // Convert to DTOs for safe actor boundary crossing
             return posts.map { PostDTO(from: $0) }
         } catch {
-            print("ERROR: Failed to fetch posts: \(error.localizedDescription)")
             return []
         }
     }
 
     func createPost(text: String, imageName: String?, forUser userId: UUID) async -> PostDTO? {
         guard let modelContext = modelContext else {
-            print("ERROR: ModelContext not set in PostsModelActor")
             return nil
         }
 
@@ -145,7 +136,6 @@ import SwiftData
         )
 
         guard let user = try? modelContext.fetch(descriptor).first else {
-            print("ERROR: User not found with ID: \(userId)")
             return nil
         }
 
@@ -163,7 +153,6 @@ import SwiftData
 
             return PostDTO(from: post)
         } catch {
-            print("ERROR: Failed to create post: \(error.localizedDescription)")
             return nil
         }
     }

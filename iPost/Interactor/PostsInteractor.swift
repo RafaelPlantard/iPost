@@ -54,11 +54,8 @@ final class PostsInteractor: PostsInteractorInputProtocol, @unchecked Sendable {
     }
 
     func fetchPosts() async {
-        print("DEBUG: PostsInteractor.fetchPosts called")
-
         // Use the ModelActor to fetch posts safely
         let postDTOs = await modelActor.fetchPosts()
-        print("DEBUG: PostsInteractor.fetchPosts fetched \(postDTOs.count) posts")
 
         // Convert DTOs to model objects
         let posts = postDTOs.map { dto -> Post in
@@ -76,17 +73,12 @@ final class PostsInteractor: PostsInteractorInputProtocol, @unchecked Sendable {
         }
 
         // Notify presenter with the fresh data
-        print("DEBUG: PostsInteractor calling presenter?.didFetchPosts with \(posts.count) posts")
         presenter?.didFetchPosts(posts)
     }
 
     func createPost(text: String, imageName: String?, forUser userId: UUID) async {
-        print("DEBUG: PostsInteractor.createPost called with userId: \(userId)")
-
         // Use the ModelActor to create a post safely
         if let postDTO = await modelActor.createPost(text: text, imageName: imageName, forUser: userId) {
-            print("DEBUG: PostsInteractor.createPost - Created post with ID: \(postDTO.id)")
-
             // Convert DTO to model object
             let post = Post(text: postDTO.text, imageName: postDTO.imageName, timestamp: postDTO.timestamp)
             post.id = postDTO.id
@@ -99,18 +91,14 @@ final class PostsInteractor: PostsInteractorInputProtocol, @unchecked Sendable {
             }
 
             // Notify the presenter that post was created successfully
-            print("DEBUG: PostsInteractor.createPost - Calling presenter?.didCreatePost")
             presenter?.didCreatePost(post)
 
             // Add a small delay to allow SwiftData to fully process the changes
-            print("DEBUG: PostsInteractor.createPost - Waiting for 300ms before fetching posts")
             try? await Task.sleep(for: .milliseconds(300))
 
             // Explicitly fetch posts again to ensure the UI is updated
-            print("DEBUG: PostsInteractor.createPost - Calling fetchPosts()")
             await fetchPosts()
         } else {
-            print("DEBUG: PostsInteractor.createPost - Failed to create post")
             presenter?.onError(message: "Failed to create post")
         }
     }
