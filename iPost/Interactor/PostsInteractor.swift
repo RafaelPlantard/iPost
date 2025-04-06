@@ -9,12 +9,13 @@ import Foundation
 import SwiftData
 
 // PostsInteractorInputProtocol: Protocol that defines the methods the presenter can call on the interactor
+@MainActor
 protocol PostsInteractorInputProtocol {
     func fetchPosts() async
     func createPost(text: String, imageName: String?, forUser userId: UUID) async
     func fetchUsers() async
-    func saveSelectedUserId(_ userId: UUID?)
-    func getSelectedUserId() -> UUID?
+    nonisolated func saveSelectedUserId(_ userId: UUID?)
+    nonisolated func getSelectedUserId() -> UUID?
 }
 
 // PostsInteractorOutputProtocol: Protocol that defines the methods the interactor can call on the presenter

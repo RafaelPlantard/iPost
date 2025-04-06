@@ -14,14 +14,14 @@ import Combine
 final class PostsPresenter: ObservableObject {
     weak var viewState: PostsPresenterOutputProtocol?
     private let interactor: PostsInteractorInputProtocol
-    private let router: PostsRouter
+    private let router: PostsRouterProtocol
     
     // State that's needed across views - exposed as per protocol requirements
     private(set) var users: [User] = []
     private(set) var posts: [Post] = []
     private(set) var selectedUserId: UUID?
     
-    init(interactor: PostsInteractorInputProtocol, router: PostsRouter) {
+    init(interactor: PostsInteractorInputProtocol, router: PostsRouterProtocol) {
         self.interactor = interactor
         self.router = router
     }

@@ -253,13 +253,17 @@ final class MockPostsInteractor: PostsInteractorInputProtocol {
         fetchUsersCalled = true
     }
     
-    func saveSelectedUserId(_ userId: UUID?) {
-        saveSelectedUserIdCalled = true
-        savedUserId = userId
+    nonisolated func saveSelectedUserId(_ userId: UUID?) {
+        Task { @MainActor in
+            saveSelectedUserIdCalled = true
+            savedUserId = userId
+        }
     }
     
-    func getSelectedUserId() -> UUID? {
-        getSelectedUserIdCalled = true
+    nonisolated func getSelectedUserId() -> UUID? {
+        Task { @MainActor in
+            getSelectedUserIdCalled = true
+        }
         return mockSelectedUserId
     }
 }
